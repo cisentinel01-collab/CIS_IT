@@ -1,0 +1,38 @@
+from models.item import Item
+from models.movement import Movement
+from models.supplier import Supplier
+from models.audit_log import AuditLog
+from utils.excel_gen import ExcelGenerator
+import datetime
+
+class ReportController:
+    def __init__(self):
+        self.item_model = Item()
+        self.movement_model = Movement()
+        self.supplier_model = Supplier()
+        self.audit_log = AuditLog()
+        self.excel_gen = ExcelGenerator()
+
+    def export_inventory_to_excel(self):
+        items = self.item_model.get_all_with_location()
+        headers = ["كود الصنف", "اسم الصنف", "الفئة", "الموقع", "الكمية الحالية", "الحد الأدنى"]
+        data = [[i['code'], i['name'], i['category'], i['location_name'], i['current_stock'], i['min_stock']] for i in items]
+
+        filename = f"reports/inventory_{datetime.datetime.now().strftime('%Y%m%d')}.xlsx"
+        self.excel_gen.export_data(filename, headers, data, "Current Inventory")
+        return filename
+
+    def export_movements_to_excel(self, type=None, start_date=None, end_date=None):
+        movements = self.movement_model.get_history(type, start_date, end_date)
+        headers = ["التاريخ", "النوع", "الرقم المرجعي", "المورد/المستلم", "ملاحظات"]
+        data = []
+        for m in movements:
+            party = m['supplier_name'] if m['type'] == 'IN' else m['receiver_name']
+            data.append([m['date'], "وارد" if m['type'] == 'IN' else "صادر", m['reference_no'], party, m['notes']])
+
+        filename = f"reports/movements_{datetime.datetime.now().strftime('%Y%m%d')}.xlsx"
+        self.excel_gen.export_data(filename, headers, data, "Movements Report")
+        return filename
+
+    def get_user_activity(self):
+        return self.audit_log.get_logs()

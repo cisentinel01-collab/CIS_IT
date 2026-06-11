@@ -1,0 +1,99 @@
+import os
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from arabic_reshaper import reshape
+from bidi.algorithm import get_display
+
+# Note: We might need to install arabic-reshaper and python-bidi
+# Let's check if they are available or install them.
+
+class PDFGenerator:
+    def __init__(self):
+        self.font_path = "assets/fonts/Cairo-Regular.ttf"
+        self.bold_font_path = "assets/fonts/Cairo-Bold.ttf"
+        if os.path.exists(self.font_path):
+            pdfmetrics.registerFont(TTFont('Cairo', self.font_path))
+            pdfmetrics.registerFont(TTFont('Cairo-Bold', self.bold_font_path))
+            self.font_name = 'Cairo'
+        else:
+            self.font_name = 'Helvetica'
+
+    def _prepare_arabic(self, text):
+        if not text:
+            return ""
+        try:
+            from arabic_reshaper import reshape
+            from bidi.algorithm import get_display
+            reshaped_text = reshape(text)
+            bidi_text = get_display(reshaped_text)
+            return bidi_text
+        except ImportError:
+            return text
+
+    def generate_invoice(self, filename, data, items, company_info):
+        doc = SimpleDocTemplate(filename, pagesize=A4)
+        elements = []
+
+        styles = getSampleStyleSheet()
+        arabic_style = ParagraphStyle(
+            'ArabicStyle',
+            parent=styles['Normal'],
+            fontName=self.font_name,
+            alignment=2, # Right alignment
+            fontSize=12
+        )
+
+        # Header
+        company_name = company_info['company_name'] if company_info else 'American Marine Services'
+        elements.append(Paragraph(self._prepare_arabic(company_name), arabic_style))
+        elements.append(Spacer(1, 12))
+
+        title = "فاتورة وارد" if data['type'] == 'IN' else "سند صرف"
+        elements.append(Paragraph(self._prepare_arabic(title), arabic_style))
+        elements.append(Spacer(1, 20))
+
+        # Info Table
+        info_data = [
+            [self._prepare_arabic(f"التاريخ: {data['date']}"), self._prepare_arabic(f"الرقم: {data['reference_no']}")],
+        ]
+        if data['type'] == 'IN':
+            supplier_name = data['supplier_name'] if 'supplier_name' in data.keys() else ""
+            info_data.append([self._prepare_arabic(f"المورد: {supplier_name}"), ""])
+        else:
+            receiver_name = data['receiver_name'] if 'receiver_name' in data.keys() else ""
+            info_data.append([self._prepare_arabic(f"المستلم: {receiver_name}"), ""])
+
+        info_table = Table(info_data, colWidths=[250, 250])
+        elements.append(info_table)
+        elements.append(Spacer(1, 20))
+
+        # Items Table
+        table_data = [[self._prepare_arabic("الإجمالي"), self._prepare_arabic("السعر"), self._prepare_arabic("الكمية"), self._prepare_arabic("الصنف")]]
+        for item in items:
+            price = item['price'] if 'price' in item.keys() else 0
+            total = item['quantity'] * price
+            table_data.append([
+                str(total),
+                str(price),
+                str(item['quantity']),
+                self._prepare_arabic(item['item_name'])
+            ])
+
+        item_table = Table(table_data, colWidths=[100, 100, 100, 200])
+        font_bold = f"{self.font_name}-Bold" if self.font_name == 'Cairo' else 'Helvetica-Bold'
+        item_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), self.font_name),
+            ('FONTNAME', (0, 0), (-1, 0), font_bold),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        elements.append(item_table)
+
+        doc.build(elements)
