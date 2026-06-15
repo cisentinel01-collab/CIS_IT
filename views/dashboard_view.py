@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                             QFrame, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView)
+                             QFrame, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox)
 from PySide6.QtCore import Qt
 import qtawesome as qta
 
