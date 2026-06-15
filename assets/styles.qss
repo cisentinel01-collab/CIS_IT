@@ -101,6 +101,7 @@ QLineEdit, QComboBox, QTextEdit {
     border-radius: 5px;
     padding: 8px;
     background-color: white;
+    color: #1a2a6c; /* Ensure text color is dark navy */
 }
 
 QLineEdit:focus {

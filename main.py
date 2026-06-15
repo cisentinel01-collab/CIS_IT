@@ -134,7 +134,8 @@ class WMSApp:
 
     def on_login_success(self, user):
         self.login_view.hide()
-        self.main_window.user_info.setText(f"مرحباً، {user['full_name']}")
+        full_name = user.get('full_name', 'مستخدم')
+        self.main_window.user_info.setText(f"مرحباً، {full_name}")
         AuthManager.set_current_user(user)
         self.apply_permissions(user)
         self.dashboard_view.refresh()

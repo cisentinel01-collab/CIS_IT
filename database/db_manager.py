@@ -42,7 +42,9 @@ class DBManager:
                 conn.commit()
                 result = cursor.lastrowid
             else:
-                result = cursor.fetchall()
+                rows = cursor.fetchall()
+                # Convert sqlite3.Row to dict to avoid Shiboken conversion issues
+                result = [dict(row) for row in rows]
         except Exception as e:
             print(f"Database error: {e}")
             if commit:
