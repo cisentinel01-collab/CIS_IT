@@ -1,0 +1,10 @@
+PySide6
+reportlab
+openpyxl
+bcrypt
+qtawesome
+arabic-reshaper
+python-bidi
+python-barcode
+qrcode
+pillow

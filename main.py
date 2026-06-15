@@ -12,6 +12,8 @@ from controllers.item_controller import ItemController
 from controllers.supplier_controller import SupplierController
 from controllers.stock_controller import StockController
 from controllers.report_controller import ReportController
+from controllers.user_controller import UserController
+from controllers.request_controller import RequestController
 
 from views.login_view import LoginView
 from views.main_window import MainWindow
@@ -20,6 +22,8 @@ from views.items_view import ItemsView
 from views.suppliers_view import SuppliersView
 from views.locations_view import LocationsView
 from views.stock_operations_view import StockOperationsView
+from views.purchase_requests_view import PurchaseRequestsView
+from views.user_management_view import UserManagementView
 from views.reports_view import ReportsView
 from views.settings_view import SettingsView
 
@@ -40,6 +44,8 @@ class WMSApp:
         self.supplier_controller = SupplierController()
         self.stock_controller = StockController()
         self.report_controller = ReportController()
+        self.user_controller = UserController()
+        self.request_controller = RequestController()
 
         # Main UI
         self.main_window = MainWindow()
@@ -52,6 +58,10 @@ class WMSApp:
 
     def init_database(self):
         db = DBManager()
+        # Ensure migration V2 is applied
+        from database.migrate import migrate
+        migrate()
+
         user_model = User()
         # Create default admin if not exists
         if not user_model.get_by_username("admin"):
@@ -77,18 +87,22 @@ class WMSApp:
         self.suppliers_view = SuppliersView(self.supplier_controller)
         self.stock_in_view = StockOperationsView(self.stock_controller, "IN")
         self.stock_out_view = StockOperationsView(self.stock_controller, "OUT")
+        self.requests_view = PurchaseRequestsView(self.request_controller)
         self.reports_view = ReportsView(self.report_controller)
+        self.user_mgmt_view = UserManagementView(self.user_controller)
         self.settings_view = SettingsView()
 
         # Add to stack in main window
-        self.main_window.stack.addWidget(self.dashboard_view) # Index 0
-        self.main_window.stack.addWidget(self.items_view)     # Index 1
-        self.main_window.stack.addWidget(self.locations_view) # Index 2
-        self.main_window.stack.addWidget(self.suppliers_view) # Index 3
-        self.main_window.stack.addWidget(self.stock_in_view)  # Index 4
-        self.main_window.stack.addWidget(self.stock_out_view) # Index 5
-        self.main_window.stack.addWidget(self.reports_view)   # Index 6
-        self.main_window.stack.addWidget(self.settings_view)  # Index 7
+        self.main_window.stack.addWidget(self.dashboard_view) # 0
+        self.main_window.stack.addWidget(self.items_view)     # 1
+        self.main_window.stack.addWidget(self.locations_view) # 2
+        self.main_window.stack.addWidget(self.suppliers_view) # 3
+        self.main_window.stack.addWidget(self.stock_in_view)  # 4
+        self.main_window.stack.addWidget(self.stock_out_view) # 5
+        self.main_window.stack.addWidget(self.requests_view)  # 6
+        self.main_window.stack.addWidget(self.reports_view)   # 7
+        self.main_window.stack.addWidget(self.user_mgmt_view) # 8
+        self.main_window.stack.addWidget(self.settings_view)  # 9
 
         # Connect sidebar signals
         self.main_window.nav_buttons["dashboard"].clicked.connect(lambda: self.switch_to(0))
@@ -97,8 +111,10 @@ class WMSApp:
         self.main_window.nav_buttons["suppliers"].clicked.connect(lambda: self.switch_to(3))
         self.main_window.nav_buttons["stock_in"].clicked.connect(lambda: self.switch_to(4))
         self.main_window.nav_buttons["stock_out"].clicked.connect(lambda: self.switch_to(5))
-        self.main_window.nav_buttons["reports"].clicked.connect(lambda: self.switch_to(6))
-        self.main_window.nav_buttons["settings"].clicked.connect(lambda: self.switch_to(7))
+        self.main_window.nav_buttons["requests"].clicked.connect(lambda: self.switch_to(6))
+        self.main_window.nav_buttons["reports"].clicked.connect(lambda: self.switch_to(7))
+        self.main_window.nav_buttons["users"].clicked.connect(lambda: self.switch_to(8))
+        self.main_window.nav_buttons["settings"].clicked.connect(lambda: self.switch_to(9))
 
     def switch_to(self, index):
         self.main_window.stack.setCurrentIndex(index)
@@ -111,25 +127,34 @@ class WMSApp:
             self.locations_view.refresh()
         elif index == 3:
             self.suppliers_view.refresh()
+        elif index == 6:
+            self.requests_view.refresh()
+        elif index == 8:
+            self.user_mgmt_view.refresh()
 
     def on_login_success(self, user):
         self.login_view.hide()
         self.main_window.user_info.setText(f"مرحباً، {user['full_name']}")
-        self.apply_permissions(user['role'])
+        AuthManager.set_current_user(user)
+        self.apply_permissions(user)
         self.dashboard_view.refresh()
         self.main_window.show()
 
-    def apply_permissions(self, role):
-        # Role-based UI visibility
-        if role == 'warehouse_keeper':
-            self.main_window.nav_buttons["reports"].hide()
-            self.main_window.nav_buttons["settings"].hide()
-        elif role == 'supervisor':
-            self.main_window.nav_buttons["items"].hide()
-            self.main_window.nav_buttons["suppliers"].hide()
-            self.main_window.nav_buttons["stock_in"].hide()
-            self.main_window.nav_buttons["stock_out"].hide()
-            self.main_window.nav_buttons["settings"].hide()
+    def apply_permissions(self, user):
+        # Admin gets everything
+        if user['role'] == 'admin':
+            for btn in self.main_window.nav_buttons.values():
+                btn.show()
+            return
+
+        # Granular permissions for others
+        perms = self.user_controller.get_permissions(user['id'])
+        for module, btn in self.main_window.nav_buttons.items():
+            if module in perms:
+                btn.setVisible(perms[module]['can_view'] == 1)
+            else:
+                # Default behavior for legacy or unspecified modules
+                btn.hide()
 
     def run(self):
         sys.exit(self.app.exec())

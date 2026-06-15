@@ -25,11 +25,19 @@ class SettingsView(QWidget):
         self.address_input = QLineEdit(settings['address'] if settings else "")
         self.phone_input = QLineEdit(settings['phone'] if settings else "")
         self.email_input = QLineEdit(settings['email'] if settings else "")
+        self.logo_path_input = QLineEdit(settings['logo_path'] if settings else "")
 
         company_layout.addRow("اسم الشركة:", self.name_input)
         company_layout.addRow("العنوان:", self.address_input)
         company_layout.addRow("رقم الهاتف:", self.phone_input)
         company_layout.addRow("البريد الإلكتروني:", self.email_input)
+
+        logo_row = QHBoxLayout()
+        logo_row.addWidget(self.logo_path_input)
+        browse_btn = QPushButton("تصفح")
+        browse_btn.clicked.connect(self.browse_logo)
+        logo_row.addWidget(browse_btn)
+        company_layout.addRow("مسار الشعار:", logo_row)
 
         save_btn = QPushButton("حفظ التغييرات")
         save_btn.setObjectName("PrimaryButton")
@@ -50,12 +58,18 @@ class SettingsView(QWidget):
         layout.addWidget(backup_group)
         layout.addStretch()
 
+    def browse_logo(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "اختر الشعار", "", "Image Files (*.png *.jpg *.jpeg)")
+        if file_path:
+            self.logo_path_input.setText(file_path)
+
     def save_settings(self):
         data = {
             "company_name": self.name_input.text(),
             "address": self.address_input.text(),
             "phone": self.phone_input.text(),
-            "email": self.email_input.text()
+            "email": self.email_input.text(),
+            "logo_path": self.logo_path_input.text()
         }
         self.settings_model.update_settings(data)
         QMessageBox.information(self, "نجاح", "تم حفظ الإعدادات بنجاح")

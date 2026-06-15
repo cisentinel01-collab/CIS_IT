@@ -12,20 +12,28 @@ class StockController:
         self.settings_model = Settings()
         self.pdf_gen = PDFGenerator()
 
+    def calculate_totals(self, items_list, discount_percent=0):
+        subtotal = sum(item['quantity'] * item.get('price', 0) for item in items_list)
+        discount_amount = (subtotal * discount_percent) / 100
+        final_total = subtotal - discount_amount
+        return subtotal, discount_amount, final_total
+
     def receive_stock(self, movement_data, items_list):
-        # Add timestamp if not provided
         if 'date' not in movement_data:
             movement_data['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         movement_data['type'] = 'IN'
+
+        subtotal, discount_amount, final_total = self.calculate_totals(items_list, movement_data.get('discount_percent', 0))
+        movement_data['subtotal'] = subtotal
+        movement_data['discount_amount'] = discount_amount
+        movement_data['final_total'] = final_total
 
         movement_id = self.movement_model.create_movement(movement_data, items_list)
 
         user = AuthManager.get_current_user()
         self.audit_log.log(user['id'] if user else None, "Stock In", "movements", movement_id)
 
-        # Generate PDF Invoice
         self.generate_movement_pdf(movement_id)
-
         return movement_id
 
     def issue_stock(self, movement_data, items_list):
@@ -33,14 +41,15 @@ class StockController:
             movement_data['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         movement_data['type'] = 'OUT'
 
+        # No price/discount for ISSUE usually, but we keep structure
+        movement_data['subtotal'], movement_data['discount_amount'], movement_data['final_total'] = 0, 0, 0
+
         movement_id = self.movement_model.create_movement(movement_data, items_list)
 
         user = AuthManager.get_current_user()
         self.audit_log.log(user['id'] if user else None, "Stock Out", "movements", movement_id)
 
-        # Generate PDF Voucher
         self.generate_movement_pdf(movement_id)
-
         return movement_id
 
     def generate_movement_pdf(self, movement_id):

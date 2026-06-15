@@ -29,7 +29,13 @@ class ItemsView(QWidget):
         add_btn.clicked.connect(self.show_add_dialog)
         toolbar.addWidget(add_btn)
 
-        import_btn = QPushButton("استيراد من Excel")
+        scan_btn = QPushButton("قراءة QR")
+        scan_btn.setObjectName("GoldButton")
+        scan_btn.setIcon(qta.icon("fa5s.qrcode", color="white"))
+        scan_btn.clicked.connect(self.handle_scan)
+        toolbar.addWidget(scan_btn)
+
+        import_btn = QPushButton("استيراد")
         import_btn.setObjectName("SecondaryButton")
         import_btn.clicked.connect(self.handle_import)
         toolbar.addWidget(import_btn)
@@ -68,6 +74,17 @@ class ItemsView(QWidget):
             self.refresh(items)
         else:
             self.refresh()
+
+    def handle_scan(self):
+        # Mocking QR scan
+        code, ok = QMessageBox.getText(self, "مسح QR", "يرجى مسح كود QR أو إدخال الكود يدوياً:")
+        if ok and code:
+            from models.item import Item
+            item = Item().get_by_code(code)
+            if item:
+                self.search_input.setText(code)
+            else:
+                QMessageBox.warning(self, "تنبيه", "الصنف غير موجود")
 
     def show_add_dialog(self):
         dialog = ItemDialog(self)

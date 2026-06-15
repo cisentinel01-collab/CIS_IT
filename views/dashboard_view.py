@@ -15,16 +15,23 @@ class DashboardView(QWidget):
         self.main_layout.setSpacing(20)
 
         # Stats Cards
-        stats_layout = QHBoxLayout()
+        grid_layout = QGridLayout()
         self.cards = {
             "items": self.create_card("إجمالي الأصناف", "0", "fa5s.boxes", "#3498db"),
             "qty": self.create_card("إجمالي الكميات", "0", "fa5s.cubes", "#2ecc71"),
+            "value": self.create_card("قيمة المخزون", "0", "fa5s.money-bill-wave", "#9b59b6"),
             "low_stock": self.create_card("أصناف منخفضة", "0", "fa5s.exclamation-triangle", "#e74c3c"),
-            "suppliers": self.create_card("عدد الموردين", "0", "fa5s.truck", "#f1c40f")
+            "suppliers": self.create_card("عدد الموردين", "0", "fa5s.truck", "#f1c40f"),
+            "daily_ops": self.create_card("حركات اليوم", "0", "fa5s.exchange-alt", "#e67e22"),
+            "pending_req": self.create_card("طلبات معلقة", "0", "fa5s.clock", "#34495e"),
+            "users": self.create_card("المستخدمين", "0", "fa5s.users", "#16a085")
         }
-        for card in self.cards.values():
-            stats_layout.addWidget(card)
-        self.main_layout.addLayout(stats_layout)
+
+        keys = list(self.cards.keys())
+        for i in range(len(keys)):
+            grid_layout.addWidget(self.cards[keys[i]], i // 4, i % 4)
+
+        self.main_layout.addLayout(grid_layout)
 
         # Recent Activities Table
         activity_label = QLabel("آخر العمليات")
@@ -66,6 +73,19 @@ class DashboardView(QWidget):
         self.cards["qty"]._value_label.setText(str(stats["total_qty"]))
         self.cards["low_stock"]._value_label.setText(str(stats["low_stock_count"]))
         self.cards["suppliers"]._value_label.setText(str(stats["total_suppliers"]))
+        self.cards["daily_ops"]._value_label.setText(str(stats["daily_ops"]))
+
+        # Additional stats
+        from database.db_manager import DBManager
+        db = DBManager()
+        val_res = db.execute_query("SELECT SUM(current_stock * COALESCE((SELECT price FROM movement_items WHERE item_id = items.id ORDER BY id DESC LIMIT 1), 0)) as val FROM items WHERE is_deleted = 0")
+        self.cards["value"]._value_label.setText(f"{val_res[0]['val'] or 0:,.2f}")
+
+        req_res = db.execute_query("SELECT COUNT(*) as count FROM purchase_requests WHERE status = 'pending' AND is_deleted = 0")
+        self.cards["pending_req"]._value_label.setText(str(req_res[0]['count']))
+
+        user_res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE status != 'deleted'")
+        self.cards["users"]._value_label.setText(str(user_res[0]['count']))
 
         # Update Table
         self.table.setRowCount(0)

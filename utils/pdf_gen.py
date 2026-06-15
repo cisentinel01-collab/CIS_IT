@@ -15,11 +15,15 @@ class PDFGenerator:
     def __init__(self):
         self.font_path = "assets/fonts/Cairo-Regular.ttf"
         self.bold_font_path = "assets/fonts/Cairo-Bold.ttf"
-        if os.path.exists(self.font_path):
-            pdfmetrics.registerFont(TTFont('Cairo', self.font_path))
-            pdfmetrics.registerFont(TTFont('Cairo-Bold', self.bold_font_path))
-            self.font_name = 'Cairo'
-        else:
+        try:
+            if os.path.exists(self.font_path):
+                pdfmetrics.registerFont(TTFont('Cairo', self.font_path))
+                pdfmetrics.registerFont(TTFont('Cairo-Bold', self.bold_font_path))
+                self.font_name = 'Cairo'
+            else:
+                self.font_name = 'Helvetica'
+        except Exception as e:
+            print(f"Font registration error: {e}")
             self.font_name = 'Helvetica'
 
     def _prepare_arabic(self, text):
@@ -48,6 +52,10 @@ class PDFGenerator:
         )
 
         # Header
+        if company_info and company_info['logo_path'] and os.path.exists(company_info['logo_path']):
+            elements.append(Image(company_info['logo_path'], width=100, height=100))
+            elements.append(Spacer(1, 12))
+
         company_name = company_info['company_name'] if company_info else 'American Marine Services'
         elements.append(Paragraph(self._prepare_arabic(company_name), arabic_style))
         elements.append(Spacer(1, 12))
@@ -77,8 +85,8 @@ class PDFGenerator:
             price = item['price'] if 'price' in item.keys() else 0
             total = item['quantity'] * price
             table_data.append([
-                str(total),
-                str(price),
+                f"{total:,.2f}",
+                f"{price:,.2f}",
                 str(item['quantity']),
                 self._prepare_arabic(item['item_name'])
             ])
@@ -95,5 +103,21 @@ class PDFGenerator:
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ]))
         elements.append(item_table)
+        elements.append(Spacer(1, 20))
+
+        # Totals and Discounts
+        if 'subtotal' in data.keys():
+            totals_data = [
+                [f"{data['subtotal']:,.2f}", self._prepare_arabic("المجموع الفرعي:")],
+                [f"{data['discount_amount']:,.2f} ({data['discount_percent']}%)", self._prepare_arabic("الخصم:")],
+                [f"{data['final_total']:,.2f}", self._prepare_arabic("الإجمالي النهائي:")]
+            ]
+            totals_table = Table(totals_data, colWidths=[100, 100])
+            totals_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                ('FONTNAME', (0, 0), (-1, -1), self.font_name),
+                ('FONTNAME', (0, 2), (-1, 2), f"{self.font_name}-Bold"),
+            ]))
+            elements.append(totals_table)
 
         doc.build(elements)

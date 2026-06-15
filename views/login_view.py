@@ -69,8 +69,18 @@ class LoginView(QWidget):
         username = self.username_input.text()
         password = self.password_input.text()
 
+        if not username or not password:
+            from utils.notifications import NotificationManager
+            NotificationManager.show("يرجى إدخال اسم المستخدم وكلمة المرور", "warning")
+            return
+
         success, user = self.auth_controller.login(username, password)
         if success:
+            if user['status'] == 'disabled':
+                QMessageBox.warning(self, "تنبيه", "هذا الحساب معطل. يرجى مراجعة المسؤول")
+                return
+            from utils.notifications import NotificationManager
+            NotificationManager.show(f"تم تسجيل الدخول بنجاح. مرحباً {user['full_name']}", "success")
             self.login_success.emit(user)
         else:
             QMessageBox.critical(self, "خطأ", "اسم المستخدم أو كلمة المرور غير صحيحة")

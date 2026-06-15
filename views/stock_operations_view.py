@@ -26,6 +26,10 @@ class StockOperationsView(QWidget):
         info_layout.addRow("رقم الفاتورة/العملية:", self.ref_input)
 
         if self.op_type == "IN":
+            self.request_combo = QComboBox()
+            self.load_requests()
+            info_layout.addRow("طلب الشراء المرتبط:", self.request_combo)
+
             self.supplier_combo = QComboBox()
             self.load_suppliers()
             info_layout.addRow("المورد:", self.supplier_combo)
@@ -71,6 +75,20 @@ class StockOperationsView(QWidget):
 
         layout.addWidget(selector_group)
 
+        # Financials
+        if self.op_type == "IN":
+            fin_group = QGroupBox("الإجماليات والخصومات")
+            fin_layout = QFormLayout(fin_group)
+            self.discount_input = QSpinBox()
+            self.discount_input.setSuffix("%")
+            self.discount_input.valueChanged.connect(self.update_summary)
+            fin_layout.addRow("نسبة الخصم:", self.discount_input)
+
+            self.summary_label = QLabel("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
+            self.summary_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #1a2a6c;")
+            fin_layout.addRow(self.summary_label)
+            layout.addWidget(fin_group)
+
         # Selected Items Table
         self.table = QTableWidget()
         self.table.setColumnCount(4 if self.op_type == "IN" else 3)
@@ -91,6 +109,20 @@ class StockOperationsView(QWidget):
         suppliers = Supplier().get_all()
         for s in suppliers:
             self.supplier_combo.addItem(s['name'], s['id'])
+
+    def load_requests(self):
+        from models.purchase_request import PurchaseRequest
+        requests = PurchaseRequest().get_all_requests(status="approved")
+        self.request_combo.addItem("بدون طلب شراء", None)
+        for r in requests:
+            self.request_combo.addItem(f"{r['request_no']} - {r['department']}", r['id'])
+
+    def update_summary(self):
+        subtotal = sum(item['quantity'] * item.get('price', 0) for item in self.items_to_move)
+        discount_pct = self.discount_input.value()
+        discount_amt = (subtotal * discount_pct) / 100
+        final = subtotal - discount_amt
+        self.summary_label.setText(f"المجموع: {subtotal:,.2f} | الخصم: {discount_amt:,.2f} | الإجمالي: {final:,.2f}")
 
     def load_items(self):
         items = Item().get_all()
@@ -123,6 +155,8 @@ class StockOperationsView(QWidget):
             "quantity": qty,
             "price": price
         })
+        if self.op_type == "IN":
+            self.update_summary()
 
     def handle_submit(self):
         if not self.items_to_move:
@@ -141,6 +175,8 @@ class StockOperationsView(QWidget):
         if self.op_type == "IN":
             movement_data["supplier_id"] = self.supplier_combo.currentData()
             movement_data["received_by"] = self.receiver_input.text()
+            movement_data["discount_percent"] = self.discount_input.value()
+            movement_data["request_id"] = self.request_combo.currentData()
             self.controller.receive_stock(movement_data, self.items_to_move)
         else:
             movement_data["issuing_entity"] = self.issuing_entity.text()

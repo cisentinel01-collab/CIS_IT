@@ -47,7 +47,9 @@ class MainWindow(QMainWindow):
             ("suppliers", "الموردين", "fa5s.truck"),
             ("stock_in", "وارد للمخزن", "fa5s.arrow-down"),
             ("stock_out", "صادر من المخزن", "fa5s.arrow-up"),
+            ("requests", "طلبات الشراء", "fa5s.file-signature"),
             ("reports", "التقارير", "fa5s.chart-bar"),
+            ("users", "المستخدمين", "fa5s.users-cog"),
             ("settings", "الإعدادات", "fa5s.cog")
         ]
 
@@ -99,7 +101,9 @@ class MainWindow(QMainWindow):
             "suppliers": "إدارة الموردين",
             "stock_in": "عمليات الوارد",
             "stock_out": "عمليات الصادر",
+            "requests": "إدارة طلبات الشراء",
             "reports": "التقارير والإحصائيات",
+            "users": "إدارة المستخدمين",
             "settings": "إعدادات النظام"
         }
         self.view_title.setText(titles.get(key, ""))
