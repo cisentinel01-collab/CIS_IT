@@ -18,9 +18,18 @@ class StockController:
         final_total = subtotal - discount_amount
         return subtotal, discount_amount, final_total
 
+    def generate_invoice_no(self, type):
+        prefix = "IN" if type == "IN" else "OUT"
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        return f"{prefix}-{timestamp}"
+
     def receive_stock(self, movement_data, items_list):
         if 'date' not in movement_data:
             movement_data['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        if not movement_data.get('reference_no'):
+            movement_data['reference_no'] = self.generate_invoice_no('IN')
+
         movement_data['type'] = 'IN'
 
         subtotal, discount_amount, final_total = self.calculate_totals(items_list, movement_data.get('discount_percent', 0))
@@ -39,6 +48,10 @@ class StockController:
     def issue_stock(self, movement_data, items_list):
         if 'date' not in movement_data:
             movement_data['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        if not movement_data.get('reference_no'):
+            movement_data['reference_no'] = self.generate_invoice_no('OUT')
+
         movement_data['type'] = 'OUT'
 
         # No price/discount for ISSUE usually, but we keep structure

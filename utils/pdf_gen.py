@@ -52,9 +52,16 @@ class PDFGenerator:
         )
 
         # Header
-        if company_info and company_info['logo_path'] and os.path.exists(company_info['logo_path']):
-            elements.append(Image(company_info['logo_path'], width=100, height=100))
-            elements.append(Spacer(1, 12))
+        logo_path = "logo/logo.png"
+        if not os.path.exists(logo_path) and company_info and company_info['logo_path']:
+            logo_path = company_info['logo_path']
+
+        if os.path.exists(logo_path):
+            try:
+                elements.append(Image(logo_path, width=100, height=100))
+                elements.append(Spacer(1, 12))
+            except:
+                pass
 
         company_name = company_info['company_name'] if company_info else 'American Marine Services'
         elements.append(Paragraph(self._prepare_arabic(company_name), arabic_style))

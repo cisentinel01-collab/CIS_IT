@@ -13,7 +13,6 @@ from controllers.supplier_controller import SupplierController
 from controllers.stock_controller import StockController
 from controllers.report_controller import ReportController
 from controllers.user_controller import UserController
-from controllers.request_controller import RequestController
 
 from views.login_view import LoginView
 from views.main_window import MainWindow
@@ -22,7 +21,6 @@ from views.items_view import ItemsView
 from views.suppliers_view import SuppliersView
 from views.locations_view import LocationsView
 from views.stock_operations_view import StockOperationsView
-from views.purchase_requests_view import PurchaseRequestsView
 from views.user_management_view import UserManagementView
 from views.reports_view import ReportsView
 from views.settings_view import SettingsView
@@ -45,7 +43,6 @@ class WMSApp:
         self.stock_controller = StockController()
         self.report_controller = ReportController()
         self.user_controller = UserController()
-        self.request_controller = RequestController()
 
         # Main UI
         self.main_window = MainWindow()
@@ -87,7 +84,6 @@ class WMSApp:
         self.suppliers_view = SuppliersView(self.supplier_controller)
         self.stock_in_view = StockOperationsView(self.stock_controller, "IN")
         self.stock_out_view = StockOperationsView(self.stock_controller, "OUT")
-        self.requests_view = PurchaseRequestsView(self.request_controller)
         self.reports_view = ReportsView(self.report_controller)
         self.user_mgmt_view = UserManagementView(self.user_controller)
         self.settings_view = SettingsView()
@@ -99,10 +95,9 @@ class WMSApp:
         self.main_window.stack.addWidget(self.suppliers_view) # 3
         self.main_window.stack.addWidget(self.stock_in_view)  # 4
         self.main_window.stack.addWidget(self.stock_out_view) # 5
-        self.main_window.stack.addWidget(self.requests_view)  # 6
-        self.main_window.stack.addWidget(self.reports_view)   # 7
-        self.main_window.stack.addWidget(self.user_mgmt_view) # 8
-        self.main_window.stack.addWidget(self.settings_view)  # 9
+        self.main_window.stack.addWidget(self.reports_view)   # 6
+        self.main_window.stack.addWidget(self.user_mgmt_view) # 7
+        self.main_window.stack.addWidget(self.settings_view)  # 8
 
         # Connect sidebar signals
         self.main_window.nav_buttons["dashboard"].clicked.connect(lambda: self.switch_to(0))
@@ -111,10 +106,9 @@ class WMSApp:
         self.main_window.nav_buttons["suppliers"].clicked.connect(lambda: self.switch_to(3))
         self.main_window.nav_buttons["stock_in"].clicked.connect(lambda: self.switch_to(4))
         self.main_window.nav_buttons["stock_out"].clicked.connect(lambda: self.switch_to(5))
-        self.main_window.nav_buttons["requests"].clicked.connect(lambda: self.switch_to(6))
-        self.main_window.nav_buttons["reports"].clicked.connect(lambda: self.switch_to(7))
-        self.main_window.nav_buttons["users"].clicked.connect(lambda: self.switch_to(8))
-        self.main_window.nav_buttons["settings"].clicked.connect(lambda: self.switch_to(9))
+        self.main_window.nav_buttons["reports"].clicked.connect(lambda: self.switch_to(6))
+        self.main_window.nav_buttons["users"].clicked.connect(lambda: self.switch_to(7))
+        self.main_window.nav_buttons["settings"].clicked.connect(lambda: self.switch_to(8))
 
     def switch_to(self, index):
         self.main_window.stack.setCurrentIndex(index)
@@ -127,9 +121,7 @@ class WMSApp:
             self.locations_view.refresh()
         elif index == 3:
             self.suppliers_view.refresh()
-        elif index == 6:
-            self.requests_view.refresh()
-        elif index == 8:
+        elif index == 7:
             self.user_mgmt_view.refresh()
 
     def on_login_success(self, user):

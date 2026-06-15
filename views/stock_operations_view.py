@@ -26,10 +26,6 @@ class StockOperationsView(QWidget):
         info_layout.addRow("رقم الفاتورة/العملية:", self.ref_input)
 
         if self.op_type == "IN":
-            self.request_combo = QComboBox()
-            self.load_requests()
-            info_layout.addRow("طلب الشراء المرتبط:", self.request_combo)
-
             self.supplier_combo = QComboBox()
             self.load_suppliers()
             info_layout.addRow("المورد:", self.supplier_combo)
@@ -110,13 +106,6 @@ class StockOperationsView(QWidget):
         for s in suppliers:
             self.supplier_combo.addItem(s['name'], s['id'])
 
-    def load_requests(self):
-        from models.purchase_request import PurchaseRequest
-        requests = PurchaseRequest().get_all_requests(status="approved")
-        self.request_combo.addItem("بدون طلب شراء", None)
-        for r in requests:
-            self.request_combo.addItem(f"{r['request_no']} - {r['department']}", r['id'])
-
     def update_summary(self):
         subtotal = sum(item['quantity'] * item.get('price', 0) for item in self.items_to_move)
         discount_pct = self.discount_input.value()
@@ -176,7 +165,6 @@ class StockOperationsView(QWidget):
             movement_data["supplier_id"] = self.supplier_combo.currentData()
             movement_data["received_by"] = self.receiver_input.text()
             movement_data["discount_percent"] = self.discount_input.value()
-            movement_data["request_id"] = self.request_combo.currentData()
             self.controller.receive_stock(movement_data, self.items_to_move)
         else:
             movement_data["issuing_entity"] = self.issuing_entity.text()

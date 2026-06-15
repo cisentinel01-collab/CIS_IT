@@ -34,5 +34,14 @@ class ReportController:
         self.excel_gen.export_data(filename, headers, data, "Movements Report")
         return filename
 
+    def export_supplier_report(self, supplier_id):
+        movements = self.movement_model.get_history(type='IN')
+        movements = [m for m in movements if m['supplier_id'] == supplier_id]
+        headers = ["التاريخ", "الرقم المرجعي", "الإجمالي", "ملاحظات"]
+        data = [[m['date'], m['reference_no'], m['final_total'], m['notes']] for m in movements]
+        filename = f"reports/supplier_{supplier_id}_{datetime.datetime.now().strftime('%Y%m%d')}.xlsx"
+        self.excel_gen.export_data(filename, headers, data, "Supplier Report")
+        return filename
+
     def get_user_activity(self):
         return self.audit_log.get_logs()

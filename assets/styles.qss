@@ -96,12 +96,14 @@ QPushButton#GoldButton {
 }
 
 /* Inputs */
-QLineEdit, QComboBox, QTextEdit {
+QLineEdit, QComboBox, QTextEdit, QSpinBox, QDoubleSpinBox {
     border: 1px solid #dcdde1;
     border-radius: 5px;
     padding: 8px;
     background-color: white;
-    color: #1a2a6c; /* Ensure text color is dark navy */
+    color: #1a2a6c; /* Dark Navy for readability */
+    selection-background-color: #d4af37;
+    selection-color: #1a2a6c;
 }
 
 QLineEdit:focus {
@@ -114,7 +116,8 @@ QTableWidget {
     alternate-background-color: #f9f9f9;
     selection-background-color: #d4af37;
     selection-color: #1a2a6c;
-    border: none;
+    color: #1a2a6c; /* Table text color */
+    border: 1px solid #dcdde1;
 }
 
 QHeaderView::section {

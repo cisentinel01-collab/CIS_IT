@@ -23,7 +23,7 @@ class DashboardView(QWidget):
             "low_stock": self.create_card("أصناف منخفضة", "0", "fa5s.exclamation-triangle", "#e74c3c"),
             "suppliers": self.create_card("عدد الموردين", "0", "fa5s.truck", "#f1c40f"),
             "daily_ops": self.create_card("حركات اليوم", "0", "fa5s.exchange-alt", "#e67e22"),
-            "pending_req": self.create_card("طلبات معلقة", "0", "fa5s.clock", "#34495e"),
+            "top_item": self.create_card("أكثر صنف صادر", "N/A", "fa5s.star", "#d35400"),
             "users": self.create_card("المستخدمين", "0", "fa5s.users", "#16a085")
         }
 
@@ -74,18 +74,9 @@ class DashboardView(QWidget):
         self.cards["low_stock"]._value_label.setText(str(stats["low_stock_count"]))
         self.cards["suppliers"]._value_label.setText(str(stats["total_suppliers"]))
         self.cards["daily_ops"]._value_label.setText(str(stats["daily_ops"]))
-
-        # Additional stats
-        from database.db_manager import DBManager
-        db = DBManager()
-        val_res = db.execute_query("SELECT SUM(current_stock * COALESCE((SELECT price FROM movement_items WHERE item_id = items.id ORDER BY id DESC LIMIT 1), 0)) as val FROM items WHERE is_deleted = 0")
-        self.cards["value"]._value_label.setText(f"{val_res[0]['val'] or 0:,.2f}")
-
-        req_res = db.execute_query("SELECT COUNT(*) as count FROM purchase_requests WHERE status = 'pending' AND is_deleted = 0")
-        self.cards["pending_req"]._value_label.setText(str(req_res[0]['count']))
-
-        user_res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE status != 'deleted'")
-        self.cards["users"]._value_label.setText(str(user_res[0]['count']))
+        self.cards["value"]._value_label.setText(f"{stats['inventory_value']:,.2f}")
+        self.cards["users"]._value_label.setText(str(stats["users_count"]))
+        self.cards["top_item"]._value_label.setText(str(stats["top_item"]))
 
         # Update Table
         self.table.setRowCount(0)

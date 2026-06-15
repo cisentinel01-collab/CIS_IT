@@ -19,7 +19,9 @@ class ReportsView(QWidget):
 
         reports = [
             ("تقرير المخزون الحالي", "fa5s.clipboard-list", self.export_inventory),
-            ("تقرير حركة المخزن", "fa5s.exchange-alt", self.export_movements),
+            ("تقرير الوارد", "fa5s.file-import", lambda: self.export_movements('IN')),
+            ("تقرير الصادر", "fa5s.file-export", lambda: self.export_movements('OUT')),
+            ("تقرير حسب المورد", "fa5s.truck", self.export_supplier_report),
             ("تقرير الأصناف منخفضة المخزون", "fa5s.exclamation-triangle", self.export_low_stock),
             ("سجل نشاط المستخدمين", "fa5s.user-shield", self.export_user_activity),
         ]
@@ -77,12 +79,30 @@ class ReportsView(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "خطأ", str(e))
 
-    def export_movements(self):
+    def export_movements(self, type=None):
         try:
-            path = self.controller.export_movements_to_excel()
+            path = self.controller.export_movements_to_excel(type=type)
             QMessageBox.information(self, "نجاح", f"تم تصدير التقرير بنجاح إلى:\n{path}")
         except Exception as e:
             QMessageBox.critical(self, "خطأ", str(e))
+
+    def export_supplier_report(self):
+        from models.supplier import Supplier
+        suppliers = Supplier().get_all()
+        if not suppliers:
+            QMessageBox.warning(self, "تنبيه", "لا يوجد موردين")
+            return
+
+        from PySide6.QtWidgets import QInputDialog
+        names = [s['name'] for s in suppliers]
+        name, ok = QInputDialog.getItem(self, "اختيار المورد", "اختر المورد للتقرير:", names, 0, False)
+        if ok and name:
+            s_id = next(s['id'] for s in suppliers if s['name'] == name)
+            try:
+                path = self.controller.export_supplier_report(s_id)
+                QMessageBox.information(self, "نجاح", f"تم تصدير التقرير بنجاح إلى:\n{path}")
+            except Exception as e:
+                QMessageBox.critical(self, "خطأ", str(e))
 
     def export_low_stock(self):
         try:

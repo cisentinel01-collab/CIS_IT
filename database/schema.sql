@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     full_name TEXT NOT NULL,
     role TEXT NOT NULL, -- 'admin', 'warehouse_keeper', 'supervisor'
+    job_title TEXT,
+    department TEXT,
+    status TEXT DEFAULT 'active',
     is_active INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -61,6 +64,10 @@ CREATE TABLE IF NOT EXISTS movements (
     employee_name TEXT, -- For OUT (الموظف الذي قام بالصرف)
     reason TEXT, -- For OUT
     notes TEXT,
+    discount_percent REAL DEFAULT 0,
+    discount_amount REAL DEFAULT 0,
+    subtotal REAL DEFAULT 0,
+    final_total REAL DEFAULT 0,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
 );
 
@@ -83,6 +90,10 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     table_name TEXT,
     record_id INTEGER,
     details TEXT,
+    old_value TEXT,
+    new_value TEXT,
+    device_name TEXT,
+    ip_address TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
