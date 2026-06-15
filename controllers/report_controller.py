@@ -19,7 +19,7 @@ class ReportController:
         data = [[i['code'], i['name'], i['category'], i['location_name'], i['current_stock'], i['min_stock']] for i in items]
 
         filename = f"reports/inventory_{datetime.datetime.now().strftime('%Y%m%d')}.xlsx"
-        self.excel_gen.export_data(filename, headers, data, "Current Inventory")
+        self.excel_gen.export_data(filename, headers, data, "تقرير المخزون الحالي")
         return filename
 
     def export_movements_to_excel(self, type=None, start_date=None, end_date=None):
@@ -30,8 +30,12 @@ class ReportController:
             party = m['supplier_name'] if m['type'] == 'IN' else m['receiver_name']
             data.append([m['date'], "وارد" if m['type'] == 'IN' else "صادر", m['reference_no'], party, m['notes']])
 
+        title = "تقرير حركة المخزن"
+        if type == 'IN': title = "تقرير الوارد"
+        elif type == 'OUT': title = "تقرير الصادر"
+
         filename = f"reports/movements_{datetime.datetime.now().strftime('%Y%m%d')}.xlsx"
-        self.excel_gen.export_data(filename, headers, data, "Movements Report")
+        self.excel_gen.export_data(filename, headers, data, title)
         return filename
 
     def export_supplier_report(self, supplier_id):

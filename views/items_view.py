@@ -44,6 +44,8 @@ class ItemsView(QWidget):
 
         # Table
         self.table = QTableWidget()
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels(["الكود", "الاسم", "الفئة", "الوحدة", "الموقع", "الكمية", "الحد الأدنى"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -56,6 +58,9 @@ class ItemsView(QWidget):
             items = self.controller.get_all_items()
 
         self.table.setRowCount(0)
+        self.table.setColumnCount(8)
+        self.table.setHorizontalHeaderLabels(["الكود", "الاسم", "الفئة", "الوحدة", "الموقع", "الكمية", "الحد الأدنى", "إجراءات"])
+
         for item in items:
             row = self.table.rowCount()
             self.table.insertRow(row)
@@ -66,6 +71,11 @@ class ItemsView(QWidget):
             self.table.setItem(row, 4, QTableWidgetItem(str(item['location_name'] or "")))
             self.table.setItem(row, 5, QTableWidgetItem(str(item['current_stock'])))
             self.table.setItem(row, 6, QTableWidgetItem(str(item['min_stock'])))
+
+            edit_btn = QPushButton("تعديل")
+            edit_btn.setStyleSheet("background-color: #f39c12; color: white; border-radius: 3px;")
+            edit_btn.clicked.connect(lambda _, i=item: self.show_edit_dialog(i))
+            self.table.setCellWidget(row, 7, edit_btn)
 
     def handle_search(self):
         term = self.search_input.text()
@@ -93,6 +103,18 @@ class ItemsView(QWidget):
             self.controller.add_item(data)
             self.refresh()
 
+    def show_edit_dialog(self, item):
+        from utils.auth import AuthManager
+        if not AuthManager.has_permission('items', 'can_edit'):
+            QMessageBox.warning(self, "تنبيه", "لا تملك صلاحية التعديل")
+            return
+
+        dialog = ItemDialog(self, item)
+        if dialog.exec():
+            data = dialog.get_data()
+            self.controller.update_item(item['id'], data)
+            self.refresh()
+
     def handle_import(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "اختر ملف Excel", "", "Excel Files (*.xlsx *.xls)")
         if file_path:
@@ -107,19 +129,36 @@ class ItemsView(QWidget):
                 QMessageBox.critical(self, "خطأ", f"فشل الاستيراد: {str(e)}")
 
 class ItemDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, item_data=None):
         super().__init__(parent)
-        self.setWindowTitle("إضافة صنف جديد")
+        self.item_data = item_data
+        self.setWindowTitle("تعديل صنف" if item_data else "إضافة صنف جديد")
         self.setLayoutDirection(Qt.RightToLeft)
         self.setup_ui()
+        if item_data:
+            self.load_data()
+
+    def load_data(self):
+        self.code_input.setText(str(self.item_data['code']))
+        self.name_input.setText(str(self.item_data['name']))
+        self.category_input.setText(str(self.item_data['category'] or ""))
+        self.unit_input.setText(str(self.item_data['unit'] or ""))
+        self.min_stock_input.setValue(self.item_data['min_stock'])
 
     def setup_ui(self):
         layout = QFormLayout(self)
+        from utils.validator import Validator
 
         self.code_input = QLineEdit()
         self.name_input = QLineEdit()
+        Validator.setup_strict_validation(self.name_input, "name")
+
         self.category_input = QLineEdit()
+        Validator.setup_strict_validation(self.category_input, "name")
+
         self.unit_input = QLineEdit()
+        Validator.setup_strict_validation(self.unit_input, "name")
+
         self.min_stock_input = QSpinBox()
         self.min_stock_input.setMaximum(1000000)
 

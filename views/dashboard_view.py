@@ -33,6 +33,31 @@ class DashboardView(QWidget):
 
         self.main_layout.addLayout(grid_layout)
 
+        # Lists Layout
+        lists_layout = QHBoxLayout()
+
+        # Low Stock List
+        ls_group = QGroupBox("أصناف قاربت على النفاد")
+        ls_layout = QVBoxLayout(ls_group)
+        self.ls_table = QTableWidget()
+        self.ls_table.setColumnCount(2)
+        self.ls_table.setHorizontalHeaderLabels(["الصنف", "الكمية"])
+        self.ls_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        ls_layout.addWidget(self.ls_table)
+        lists_layout.addWidget(ls_group)
+
+        # Top Suppliers List
+        ts_group = QGroupBox("أهم الموردين")
+        ts_layout = QVBoxLayout(ts_group)
+        self.ts_table = QTableWidget()
+        self.ts_table.setColumnCount(2)
+        self.ts_table.setHorizontalHeaderLabels(["المورد", "عدد العمليات"])
+        self.ts_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        ts_layout.addWidget(self.ts_table)
+        lists_layout.addWidget(ts_group)
+
+        self.main_layout.addLayout(lists_layout)
+
         # Recent Activities Table
         activity_label = QLabel("آخر العمليات")
         activity_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #1a2a6c;")
@@ -77,6 +102,22 @@ class DashboardView(QWidget):
         self.cards["value"]._value_label.setText(f"{stats['inventory_value']:,.2f}")
         self.cards["users"]._value_label.setText(str(stats["users_count"]))
         self.cards["top_item"]._value_label.setText(str(stats["top_item"]))
+
+        # Update Low Stock Table
+        self.ls_table.setRowCount(0)
+        for item in stats["low_stock_items"]:
+            row = self.ls_table.rowCount()
+            self.ls_table.insertRow(row)
+            self.ls_table.setItem(row, 0, QTableWidgetItem(item['name']))
+            self.ls_table.setItem(row, 1, QTableWidgetItem(str(item['current_stock'])))
+
+        # Update Top Suppliers Table
+        self.ts_table.setRowCount(0)
+        for s in stats["top_suppliers"]:
+            row = self.ts_table.rowCount()
+            self.ts_table.insertRow(row)
+            self.ts_table.setItem(row, 0, QTableWidgetItem(s['name']))
+            self.ts_table.setItem(row, 1, QTableWidgetItem(str(s['op_count'])))
 
         # Update Table
         self.table.setRowCount(0)

@@ -23,6 +23,9 @@ class StockOperationsView(QWidget):
         info_layout = QFormLayout(info_group)
 
         self.ref_input = QLineEdit()
+        self.ref_input.setReadOnly(True)
+        self.ref_input.setPlaceholderText("سيتم التوليد تلقائياً")
+        self.ref_input.setText(self.controller.generate_invoice_no(self.op_type))
         info_layout.addRow("رقم الفاتورة/العملية:", self.ref_input)
 
         if self.op_type == "IN":
@@ -72,18 +75,17 @@ class StockOperationsView(QWidget):
         layout.addWidget(selector_group)
 
         # Financials
-        if self.op_type == "IN":
-            fin_group = QGroupBox("الإجماليات والخصومات")
-            fin_layout = QFormLayout(fin_group)
-            self.discount_input = QSpinBox()
-            self.discount_input.setSuffix("%")
-            self.discount_input.valueChanged.connect(self.update_summary)
-            fin_layout.addRow("نسبة الخصم:", self.discount_input)
+        fin_group = QGroupBox("الإجماليات والخصومات")
+        fin_layout = QFormLayout(fin_group)
+        self.discount_input = QSpinBox()
+        self.discount_input.setSuffix("%")
+        self.discount_input.valueChanged.connect(self.update_summary)
+        fin_layout.addRow("نسبة الخصم:", self.discount_input)
 
-            self.summary_label = QLabel("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
-            self.summary_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #1a2a6c;")
-            fin_layout.addRow(self.summary_label)
-            layout.addWidget(fin_group)
+        self.summary_label = QLabel("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
+        self.summary_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #1a2a6c;")
+        fin_layout.addRow(self.summary_label)
+        layout.addWidget(fin_group)
 
         # Selected Items Table
         self.table = QTableWidget()
@@ -144,27 +146,27 @@ class StockOperationsView(QWidget):
             "quantity": qty,
             "price": price
         })
-        if self.op_type == "IN":
-            self.update_summary()
+        self.update_summary()
 
     def handle_submit(self):
         if not self.items_to_move:
             QMessageBox.warning(self, "تنبيه", "يرجى إضافة أصناف أولاً")
             return
 
-        if not self.ref_input.text():
-            QMessageBox.warning(self, "تنبيه", "يرجى إدخال رقم المرجعي")
-            return
+        # Re-generate to ensure uniqueness if window was open for long
+        ref_no = self.controller.generate_invoice_no(self.op_type)
+        self.ref_input.setText(ref_no)
 
         movement_data = {
-            "reference_no": self.ref_input.text(),
+            "reference_no": ref_no,
             "notes": ""
         }
+
+        movement_data["discount_percent"] = self.discount_input.value()
 
         if self.op_type == "IN":
             movement_data["supplier_id"] = self.supplier_combo.currentData()
             movement_data["received_by"] = self.receiver_input.text()
-            movement_data["discount_percent"] = self.discount_input.value()
             self.controller.receive_stock(movement_data, self.items_to_move)
         else:
             movement_data["issuing_entity"] = self.issuing_entity.text()

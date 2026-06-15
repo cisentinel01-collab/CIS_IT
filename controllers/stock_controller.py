@@ -20,8 +20,15 @@ class StockController:
 
     def generate_invoice_no(self, type):
         prefix = "IN" if type == "IN" else "OUT"
-        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        return f"{prefix}-{timestamp}"
+        timestamp = datetime.datetime.now().strftime("%Y%m%d")
+
+        # Count existing movements for today to get sequence
+        query = "SELECT COUNT(*) as count FROM movements WHERE type = ? AND date LIKE ?"
+        today = datetime.datetime.now().strftime("%Y-%m-%d")
+        res = self.movement_model.db.execute_query(query, (type, f"{today}%"))
+        seq = (res[0]['count'] if res else 0) + 1
+
+        return f"{prefix}-{timestamp}-{seq:04d}"
 
     def receive_stock(self, movement_data, items_list):
         if 'date' not in movement_data:
@@ -54,8 +61,11 @@ class StockController:
 
         movement_data['type'] = 'OUT'
 
-        # No price/discount for ISSUE usually, but we keep structure
-        movement_data['subtotal'], movement_data['discount_amount'], movement_data['final_total'] = 0, 0, 0
+        # Calculate totals even for OUT if prices are provided (optional but good for tracking)
+        subtotal, discount_amount, final_total = self.calculate_totals(items_list, movement_data.get('discount_percent', 0))
+        movement_data['subtotal'] = subtotal
+        movement_data['discount_amount'] = discount_amount
+        movement_data['final_total'] = final_total
 
         movement_id = self.movement_model.create_movement(movement_data, items_list)
 

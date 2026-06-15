@@ -60,6 +60,20 @@ class DashboardController:
         top_item_res = self.db.execute_query(top_item_query)
         top_item = top_item_res[0]['name'] if top_item_res else "N/A"
 
+        # Top 5 Suppliers
+        top_suppliers_query = """
+            SELECT s.name, COUNT(m.id) as op_count
+            FROM suppliers s
+            JOIN movements m ON s.id = m.supplier_id
+            WHERE m.type = 'IN' AND s.is_deleted = 0
+            GROUP BY s.id
+            ORDER BY op_count DESC LIMIT 5
+        """
+        top_suppliers = self.db.execute_query(top_suppliers_query)
+
+        # Top 5 Low Stock Items
+        low_stock_items = self.item_model.get_low_stock()[:5]
+
         return {
             "total_items": total_items,
             "total_qty": total_qty,
@@ -69,5 +83,7 @@ class DashboardController:
             "daily_ops": daily_ops,
             "inventory_value": inventory_value,
             "users_count": users_count,
-            "top_item": top_item
+            "top_item": top_item,
+            "top_suppliers": top_suppliers,
+            "low_stock_items": low_stock_items
         }

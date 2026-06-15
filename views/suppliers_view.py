@@ -29,6 +29,8 @@ class SuppliersView(QWidget):
         layout.addLayout(toolbar)
 
         self.table = QTableWidget()
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["الاسم", "الهاتف", "البريد الإلكتروني", "العنوان"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -41,6 +43,9 @@ class SuppliersView(QWidget):
             suppliers = self.controller.get_all_suppliers()
 
         self.table.setRowCount(0)
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["الاسم", "الهاتف", "البريد الإلكتروني", "العنوان", "إجراءات"])
+
         for s in suppliers:
             row = self.table.rowCount()
             self.table.insertRow(row)
@@ -48,6 +53,11 @@ class SuppliersView(QWidget):
             self.table.setItem(row, 1, QTableWidgetItem(s['phone'] or ""))
             self.table.setItem(row, 2, QTableWidgetItem(s['email'] or ""))
             self.table.setItem(row, 3, QTableWidgetItem(s['address'] or ""))
+
+            edit_btn = QPushButton("تعديل")
+            edit_btn.setStyleSheet("background-color: #f39c12; color: white; border-radius: 3px;")
+            edit_btn.clicked.connect(lambda _, sup=s: self.show_edit_dialog(sup))
+            self.table.setCellWidget(row, 4, edit_btn)
 
     def handle_search(self):
         term = self.search_input.text()
@@ -64,18 +74,44 @@ class SuppliersView(QWidget):
             self.controller.add_supplier(data)
             self.refresh()
 
+    def show_edit_dialog(self, supplier):
+        from utils.auth import AuthManager
+        if not AuthManager.has_permission('suppliers', 'can_edit'):
+            QMessageBox.warning(self, "تنبيه", "لا تملك صلاحية التعديل")
+            return
+
+        dialog = SupplierDialog(self, supplier)
+        if dialog.exec():
+            data = dialog.get_data()
+            self.controller.update_supplier(supplier['id'], data)
+            self.refresh()
+
 class SupplierDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, supplier_data=None):
         super().__init__(parent)
-        self.setWindowTitle("إضافة مورد جديد")
+        self.supplier_data = supplier_data
+        self.setWindowTitle("تعديل مورد" if supplier_data else "إضافة مورد جديد")
         self.setLayoutDirection(Qt.RightToLeft)
         self.setup_ui()
+        if supplier_data:
+            self.load_data()
+
+    def load_data(self):
+        self.name_input.setText(self.supplier_data['name'])
+        self.phone_input.setText(self.supplier_data['phone'] or "")
+        self.email_input.setText(self.supplier_data['email'] or "")
+        self.address_input.setText(self.supplier_data['address'] or "")
 
     def setup_ui(self):
         layout = QFormLayout(self)
+        from utils.validator import Validator
 
         self.name_input = QLineEdit()
+        Validator.setup_strict_validation(self.name_input, "name")
+
         self.phone_input = QLineEdit()
+        Validator.setup_strict_validation(self.phone_input, "numeric")
+
         self.email_input = QLineEdit()
         self.address_input = QLineEdit()
 

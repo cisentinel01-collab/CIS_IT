@@ -67,8 +67,11 @@ class PDFGenerator:
         elements.append(Paragraph(self._prepare_arabic(company_name), arabic_style))
         elements.append(Spacer(1, 12))
 
-        title = "فاتورة وارد" if data['type'] == 'IN' else "سند صرف"
-        elements.append(Paragraph(self._prepare_arabic(title), arabic_style))
+        title_text = data.get('report_title')
+        if not title_text:
+            title_text = "فاتورة وارد" if data['type'] == 'IN' else "سند صرف"
+
+        elements.append(Paragraph(self._prepare_arabic(title_text), arabic_style))
         elements.append(Spacer(1, 20))
 
         # Info Table

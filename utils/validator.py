@@ -18,6 +18,27 @@ class Validator:
         return bool(re.match(r'^\d+(\.\d+)?$', text))
 
     @staticmethod
+    def setup_strict_validation(line_edit, type="text"):
+        from PySide6.QtGui import QRegularExpressionValidator
+        from PySide6.QtCore import QRegularExpression
+
+        if type == "name":
+            # Arabic and English letters and spaces only
+            regex = QRegularExpression(r"^[\u0600-\u06FFa-zA-Z\s]*$")
+            validator = QRegularExpressionValidator(regex, line_edit)
+            line_edit.setValidator(validator)
+        elif type == "numeric":
+            # Digits only
+            regex = QRegularExpression(r"^\d*$")
+            validator = QRegularExpressionValidator(regex, line_edit)
+            line_edit.setValidator(validator)
+        elif type == "decimal":
+            # Decimal numbers
+            regex = QRegularExpression(r"^\d*\.?\d*$")
+            validator = QRegularExpressionValidator(regex, line_edit)
+            line_edit.setValidator(validator)
+
+    @staticmethod
     def validate_password(password):
         """
         Password complexity: min 6 chars, at least one letter and one digit.
