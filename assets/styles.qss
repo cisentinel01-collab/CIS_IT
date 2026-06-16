@@ -162,3 +162,36 @@ QHeaderView::section {
     padding: 10px;
     border: 1px solid #2a3a7c;
 }
+
+/* Tabs Styling */
+QTabWidget::pane {
+    border: 1px solid #dcdde1;
+    background: white;
+}
+
+QTabBar::tab {
+    background: #f1f2f6;
+    color: #1a2a6c;
+    padding: 12px 30px;
+    border: 1px solid #dcdde1;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    font-weight: bold;
+}
+
+QTabBar::tab:selected {
+    background: #1a2a6c;
+    color: white;
+}
+
+QTabBar::tab:hover:!selected {
+    background: #e1e2e6;
+}
+
+/* Financial Summary Labels */
+#GoldSummaryLabel {
+    color: #d4af37; /* Gold */
+    font-size: 18px;
+    font-weight: bold;
+}

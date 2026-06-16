@@ -109,7 +109,7 @@ class StockOperationsView(QWidget):
         fin_layout.addRow("نسبة الخصم:", self.discount_input)
 
         self.summary_label = QLabel("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
-        self.summary_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #1a2a6c;")
+        self.summary_label.setObjectName("GoldSummaryLabel")
         fin_layout.addRow(self.summary_label)
         layout.addWidget(fin_group)
 
