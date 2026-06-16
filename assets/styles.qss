@@ -56,8 +56,9 @@ QWidget {
 }
 
 #CardTitle {
-    color: #7f8c8d;
-    font-size: 14px;
+    color: #1a2a6c;
+    font-size: 15px;
+    font-weight: bold;
 }
 
 #CardValue {

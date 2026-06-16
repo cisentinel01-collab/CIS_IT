@@ -23,8 +23,8 @@ class Validator:
         from PySide6.QtCore import QRegularExpression
 
         if type == "name":
-            # Arabic and English letters and spaces only
-            regex = QRegularExpression(r"^[\u0600-\u06FFa-zA-Z\s]*$")
+            # Allow everything except digits
+            regex = QRegularExpression(r"^[^\d]*$")
             validator = QRegularExpressionValidator(regex, line_edit)
             line_edit.setValidator(validator)
         elif type == "numeric":

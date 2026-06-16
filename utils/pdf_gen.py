@@ -27,15 +27,20 @@ class PDFGenerator:
             self.font_name = 'Helvetica'
 
     def _prepare_arabic(self, text):
-        if not text:
-            return ""
+        if text is None: return ""
+        text = str(text)
+        if not text.strip(): return ""
+
         try:
             from arabic_reshaper import reshape
             from bidi.algorithm import get_display
+
+            # Configuration for better Arabic rendering
             reshaped_text = reshape(text)
             bidi_text = get_display(reshaped_text)
             return bidi_text
-        except ImportError:
+        except Exception as e:
+            print(f"Arabic preparing error: {e}")
             return text
 
     def generate_invoice(self, filename, data, items, company_info):

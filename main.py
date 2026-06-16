@@ -88,7 +88,10 @@ class WMSApp:
         # Connect refresh signals
         self.items_view.data_changed.connect(self.stock_in_view.load_items)
         self.items_view.data_changed.connect(self.stock_out_view.load_items)
+        self.items_view.data_changed.connect(self.dashboard_view.refresh)
+
         self.suppliers_view.data_changed.connect(self.stock_in_view.load_suppliers)
+        self.suppliers_view.data_changed.connect(self.dashboard_view.refresh)
         self.reports_view = ReportsView(self.report_controller)
         self.user_mgmt_view = UserManagementView(self.user_controller)
         self.settings_view = SettingsView()

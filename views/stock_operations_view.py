@@ -30,19 +30,29 @@ class StockOperationsView(QWidget):
 
         if self.op_type == "IN":
             self.supplier_combo = QComboBox()
+            self.supplier_combo.setToolTip("اختر المورد الذي تم استلام الأصناف منه")
             self.load_suppliers()
             info_layout.addRow("المورد:", self.supplier_combo)
 
             self.receiver_input = QLineEdit()
+            self.receiver_input.setPlaceholderText("أدخل اسم الموظف المستلم")
+            from utils.validator import Validator
+            Validator.setup_strict_validation(self.receiver_input, "name")
             info_layout.addRow("اسم المستلم:", self.receiver_input)
         else:
             self.issuing_entity = QLineEdit()
+            self.issuing_entity.setPlaceholderText("مثال: قسم الصيانة، العميل...")
+            from utils.validator import Validator
+            Validator.setup_strict_validation(self.issuing_entity, "name")
             info_layout.addRow("الجهة المستلمة:", self.issuing_entity)
 
             self.receiver_name = QLineEdit()
+            self.receiver_name.setPlaceholderText("اسم الشخص الذي تسلم العهدة")
+            Validator.setup_strict_validation(self.receiver_name, "name")
             info_layout.addRow("اسم الشخص المستلم:", self.receiver_name)
 
             self.reason_input = QLineEdit()
+            self.reason_input.setPlaceholderText("سبب خروج الأصناف من المخزن")
             info_layout.addRow("سبب الصرف:", self.reason_input)
 
         layout.addWidget(info_group)
@@ -127,6 +137,12 @@ class StockOperationsView(QWidget):
         qty = self.qty_input.value()
         if qty <= 0: return
 
+        if self.op_type == "OUT":
+            if qty > item_data['current_stock']:
+                QMessageBox.warning(self, "تنبيه المخزون",
+                                  f"الكمية المطلوبة ({qty}) أكبر من المخزون المتاح ({item_data['current_stock']})")
+                return
+
         price = 0
         if self.op_type == "IN":
             try:
@@ -155,29 +171,31 @@ class StockOperationsView(QWidget):
             QMessageBox.warning(self, "تنبيه", "يرجى إضافة أصناف أولاً")
             return
 
-        # Re-generate to ensure uniqueness if window was open for long
-        ref_no = self.controller.generate_invoice_no(self.op_type)
-        self.ref_input.setText(ref_no)
+        try:
+            # Re-generate to ensure uniqueness if window was open for long
+            ref_no = self.controller.generate_invoice_no(self.op_type)
+            self.ref_input.setText(ref_no)
 
-        movement_data = {
-            "reference_no": ref_no,
-            "notes": ""
-        }
+            movement_data = {
+                "reference_no": ref_no,
+                "notes": "",
+                "discount_percent": self.discount_input.value()
+            }
 
-        movement_data["discount_percent"] = self.discount_input.value()
+            if self.op_type == "IN":
+                movement_data["supplier_id"] = self.supplier_combo.currentData()
+                movement_data["received_by"] = self.receiver_input.text()
+                self.controller.receive_stock(movement_data, self.items_to_move)
+            else:
+                movement_data["issuing_entity"] = self.issuing_entity.text()
+                movement_data["receiver_name"] = self.receiver_name.text()
+                movement_data["reason"] = self.reason_input.text()
+                self.controller.issue_stock(movement_data, self.items_to_move)
 
-        if self.op_type == "IN":
-            movement_data["supplier_id"] = self.supplier_combo.currentData()
-            movement_data["received_by"] = self.receiver_input.text()
-            self.controller.receive_stock(movement_data, self.items_to_move)
-        else:
-            movement_data["issuing_entity"] = self.issuing_entity.text()
-            movement_data["receiver_name"] = self.receiver_name.text()
-            movement_data["reason"] = self.reason_input.text()
-            self.controller.issue_stock(movement_data, self.items_to_move)
-
-        QMessageBox.information(self, "نجاح", "تمت العملية بنجاح وتم إنشاء ملف PDF")
-        self.reset_form()
+            QMessageBox.information(self, "نجاح", "تمت العملية بنجاح وتم إنشاء ملف PDF")
+            self.reset_form()
+        except Exception as e:
+            QMessageBox.critical(self, "خطأ", f"فشل إتمام العملية: {str(e)}")
 
     def reset_form(self):
         self.ref_input.clear()
