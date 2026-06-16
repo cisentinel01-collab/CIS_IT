@@ -25,7 +25,7 @@ class DashboardController:
         recent_movements = self.movement_model.get_history()[:10]
 
         # Daily operations count
-        from datetime import date
+        from datetime import date, datetime
         today = date.today().isoformat()
         daily_ops_query = "SELECT COUNT(*) as total FROM movements WHERE date LIKE ?"
         daily_res = self.db.execute_query(daily_ops_query, (f"{today}%",))
