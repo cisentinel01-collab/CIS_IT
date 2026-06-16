@@ -73,6 +73,12 @@ class LocationDialog(QDialog):
         self.setWindowTitle("تعديل موقع" if loc_data else "إضافة موقع جديد")
         self.setLayoutDirection(Qt.RightToLeft)
         self.setup_ui()
+        if loc_data:
+            self.load_data()
+
+    def load_data(self):
+        self.name_input.setText(self.loc_data['name'])
+        self.desc_input.setText(self.loc_data['description'] or "")
 
     def setup_ui(self):
         layout = QFormLayout(self)

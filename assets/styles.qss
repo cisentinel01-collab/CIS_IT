@@ -119,6 +119,15 @@ QComboBox {
     font-size: 14px;
 }
 
+QComboBox QAbstractItemView {
+    background-color: white;
+    color: #1a2a6c;
+    selection-background-color: #d4af37;
+    selection-color: #1a2a6c;
+    border: 1px solid #dcdde1;
+    outline: none;
+}
+
 QSpinBox::up-button, QDoubleSpinBox::up-button {
     subcontrol-origin: border;
     subcontrol-position: top right;

@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QComboBox, QSpinBox, QFormLayout,
-                             QGroupBox, QMessageBox)
+                             QGroupBox, QMessageBox, QTabWidget)
 from PySide6.QtCore import Qt
 from models.item import Item
 from models.supplier import Supplier
@@ -15,7 +15,22 @@ class StockOperationsView(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
-        layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
+        self.tabs = QTabWidget()
+        self.main_layout.addWidget(self.tabs)
+
+        # Operation Tab
+        self.op_tab = QWidget()
+        self.setup_operation_tab()
+        self.tabs.addTab(self.op_tab, "تنفيذ عملية")
+
+        # History Tab
+        self.history_tab = QWidget()
+        self.setup_history_tab()
+        self.tabs.addTab(self.history_tab, "السجل")
+
+    def setup_operation_tab(self):
+        layout = QVBoxLayout(self.op_tab)
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Header Info
@@ -114,6 +129,44 @@ class StockOperationsView(QWidget):
         submit_btn.clicked.connect(self.handle_submit)
         layout.addWidget(submit_btn)
 
+    def setup_history_tab(self):
+        layout = QVBoxLayout(self.history_tab)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        self.history_table = QTableWidget()
+        self.history_table.setColumnCount(5)
+        self.history_table.setHorizontalHeaderLabels(["التاريخ", "رقم الفاتورة", "المورد/المستلم", "الإجمالي", "إجراءات"])
+        self.history_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        layout.addWidget(self.history_table)
+
+        refresh_btn = QPushButton("تحديث السجل")
+        refresh_btn.clicked.connect(self.load_history)
+        layout.addWidget(refresh_btn)
+
+        self.load_history()
+
+    def load_history(self):
+        history = self.controller.get_movement_history(type=self.op_type)
+        self.history_table.setRowCount(0)
+        for h in history:
+            row = self.history_table.rowCount()
+            self.history_table.insertRow(row)
+            party = h['supplier_name'] if self.op_type == 'IN' else h['receiver_name']
+            self.history_table.setItem(row, 0, QTableWidgetItem(h['date']))
+            self.history_table.setItem(row, 1, QTableWidgetItem(h['reference_no']))
+            self.history_table.setItem(row, 2, QTableWidgetItem(party or ""))
+            self.history_table.setItem(row, 3, QTableWidgetItem(f"{h['final_total']:,.2f}"))
+
+            view_pdf_btn = QPushButton("عرض PDF")
+            view_pdf_btn.clicked.connect(lambda _, m_id=h['id']: self.view_movement_pdf(m_id))
+            self.history_table.setCellWidget(row, 4, view_pdf_btn)
+
+    def view_movement_pdf(self, movement_id):
+        path = self.controller.generate_movement_pdf(movement_id)
+        from views.print_preview import PrintPreviewDialog
+        dialog = PrintPreviewDialog(path, self)
+        dialog.exec()
+
     def load_suppliers(self):
         self.supplier_combo.clear()
         suppliers = Supplier().get_all()
@@ -172,7 +225,8 @@ class StockOperationsView(QWidget):
             "item_name": item_data['name'],
             "item_code": item_data['code'],
             "quantity": qty,
-            "price": price
+            "price": price,
+            "unit": item_data.get('unit', '')
         })
         self.update_summary()
 

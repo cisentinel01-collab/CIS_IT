@@ -134,13 +134,26 @@ class PDFGenerator:
                 [f"{data['discount_amount']:,.2f} ({data['discount_percent']}%)", self._prepare_arabic("الخصم:")],
                 [f"{data['final_total']:,.2f}", self._prepare_arabic("الإجمالي النهائي:")]
             ]
-            totals_table = Table(totals_data, colWidths=[100, 100])
+            totals_table = Table(totals_data, colWidths=[100, 150])
             totals_table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
                 ('FONTNAME', (0, 0), (-1, -1), self.font_name),
-                ('FONTNAME', (0, 2), (-1, 2), f"{self.font_name}-Bold"),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
             ]))
             elements.append(totals_table)
+
+        elements.append(Spacer(1, 30))
+
+        # Stamp Area
+        stamp_data = [["", self._prepare_arabic("ختم الشركة")]]
+        stamp_table = Table(stamp_data, colWidths=[350, 150])
+        stamp_table.setStyle(TableStyle([
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), f"{self.font_name}-Bold" if self.font_name == 'Cairo' else 'Helvetica-Bold'),
+            ('BOX', (1, 0), (1, 0), 1, colors.black),
+            ('BOTTOMPADDING', (1, 0), (1, 0), 60), # Space for the actual stamp
+        ]))
+        elements.append(stamp_table)
 
         doc.build(elements)
 
