@@ -67,6 +67,7 @@ class StockOperationsView(QWidget):
         selector_layout.addWidget(self.item_combo, 2)
 
         self.qty_input = QSpinBox()
+        self.qty_input.setMinimum(1)
         self.qty_input.setMaximum(1000000)
         selector_layout.addWidget(QLabel("الكمية:"))
         selector_layout.addWidget(self.qty_input)
@@ -149,7 +150,11 @@ class StockOperationsView(QWidget):
         price = 0
         if self.op_type == "IN":
             try:
-                price = float(self.price_input.text() or 0)
+                price_text = self.price_input.text()
+                if not price_text:
+                    QMessageBox.warning(self, "تنبيه", "يرجى إدخال السعر")
+                    return
+                price = float(price_text)
             except ValueError:
                 QMessageBox.warning(self, "خطأ", "السعر يجب أن يكون رقماً")
                 return
@@ -164,6 +169,8 @@ class StockOperationsView(QWidget):
 
         self.items_to_move.append({
             "item_id": item_data['id'],
+            "item_name": item_data['name'],
+            "item_code": item_data['code'],
             "quantity": qty,
             "price": price
         })
@@ -175,7 +182,6 @@ class StockOperationsView(QWidget):
             return
 
         try:
-            # Re-generate to ensure uniqueness if window was open for long
             ref_no = self.controller.generate_invoice_no(self.op_type)
             self.ref_input.setText(ref_no)
 
@@ -190,6 +196,9 @@ class StockOperationsView(QWidget):
                 if not Validator.is_not_empty(self.receiver_input.text()):
                     QMessageBox.warning(self, "تنبيه", "يرجى إدخال اسم المستلم")
                     return
+                if not self.supplier_combo.currentData():
+                    QMessageBox.warning(self, "تنبيه", "يرجى اختيار المورد")
+                    return
                 movement_data["supplier_id"] = self.supplier_combo.currentData()
                 movement_data["received_by"] = self.receiver_input.text()
                 self.controller.receive_stock(movement_data, self.items_to_move)
@@ -203,17 +212,22 @@ class StockOperationsView(QWidget):
                 movement_data["reason"] = self.reason_input.text()
                 self.controller.issue_stock(movement_data, self.items_to_move)
 
-            QMessageBox.information(self, "نجاح", "تمت العملية بنجاح وتم إنشاء ملف PDF")
+            QMessageBox.information(self, "نجاح", f"تمت العملية بنجاح. رقم الفاتورة: {ref_no}")
             self.reset_form()
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             QMessageBox.critical(self, "خطأ", f"فشل إتمام العملية: {str(e)}")
 
     def reset_form(self):
-        self.ref_input.clear()
+        self.ref_input.setText(self.controller.generate_invoice_no(self.op_type))
         self.table.setRowCount(0)
         self.items_to_move = []
+        self.summary_label.setText("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
+        self.discount_input.setValue(0)
         if self.op_type == "IN":
             self.receiver_input.clear()
+            if hasattr(self, 'price_input'): self.price_input.clear()
         else:
             self.issuing_entity.clear()
             self.receiver_name.clear()
