@@ -6,7 +6,11 @@ from PySide6.QtCore import Qt
 import qtawesome as qta
 import os
 
+from PySide6.QtCore import Qt, Signal
+
 class ItemsView(QWidget):
+    data_changed = Signal()
+
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
@@ -102,6 +106,7 @@ class ItemsView(QWidget):
             data = dialog.get_data()
             self.controller.add_item(data)
             self.refresh()
+            self.data_changed.emit()
 
     def show_edit_dialog(self, item):
         from utils.auth import AuthManager
@@ -114,6 +119,7 @@ class ItemsView(QWidget):
             data = dialog.get_data()
             self.controller.update_item(item['id'], data)
             self.refresh()
+            self.data_changed.emit()
 
     def handle_import(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "اختر ملف Excel", "", "Excel Files (*.xlsx *.xls)")
@@ -150,13 +156,18 @@ class ItemDialog(QDialog):
         from utils.validator import Validator
 
         self.code_input = QLineEdit()
+        self.code_input.setPlaceholderText("مثال: ITEM-101")
+
         self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("أدخل اسم الصنف بالكامل")
         Validator.setup_strict_validation(self.name_input, "name")
 
         self.category_input = QLineEdit()
+        self.category_input.setPlaceholderText("مثال: قطع غيار، زيوت...")
         Validator.setup_strict_validation(self.category_input, "name")
 
         self.unit_input = QLineEdit()
+        self.unit_input.setPlaceholderText("مثال: قطعة، لتر، كجم")
         Validator.setup_strict_validation(self.unit_input, "name")
 
         self.min_stock_input = QSpinBox()

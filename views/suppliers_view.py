@@ -4,7 +4,11 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
 from PySide6.QtCore import Qt
 import qtawesome as qta
 
+from PySide6.QtCore import Qt, Signal
+
 class SuppliersView(QWidget):
+    data_changed = Signal()
+
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
@@ -73,6 +77,7 @@ class SuppliersView(QWidget):
             data = dialog.get_data()
             self.controller.add_supplier(data)
             self.refresh()
+            self.data_changed.emit()
 
     def show_edit_dialog(self, supplier):
         from utils.auth import AuthManager
@@ -85,6 +90,7 @@ class SuppliersView(QWidget):
             data = dialog.get_data()
             self.controller.update_supplier(supplier['id'], data)
             self.refresh()
+            self.data_changed.emit()
 
 class SupplierDialog(QDialog):
     def __init__(self, parent=None, supplier_data=None):
@@ -107,13 +113,18 @@ class SupplierDialog(QDialog):
         from utils.validator import Validator
 
         self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("أدخل اسم الشركة الموردة")
         Validator.setup_strict_validation(self.name_input, "name")
 
         self.phone_input = QLineEdit()
+        self.phone_input.setPlaceholderText("أرقام فقط")
         Validator.setup_strict_validation(self.phone_input, "numeric")
 
         self.email_input = QLineEdit()
+        self.email_input.setPlaceholderText("example@domain.com")
+
         self.address_input = QLineEdit()
+        self.address_input.setPlaceholderText("العنوان التفصيلي")
 
         layout.addRow("اسم المورد:", self.name_input)
         layout.addRow("رقم الهاتف:", self.phone_input)

@@ -98,13 +98,29 @@ QPushButton#GoldButton {
 /* Inputs */
 QLineEdit, QComboBox, QTextEdit, QSpinBox, QDoubleSpinBox {
     border: 1px solid #dcdde1;
-    border-radius: 5px;
-    padding: 8px;
-    padding-right: 30px; /* Space for arrows and Arabic text */
+    border-radius: 8px;
+    padding: 10px;
+    padding-right: 35px; /* Comfortable space for arrows and Arabic text */
+    padding-left: 10px;
     background-color: white;
-    color: #1a2a6c; /* Dark Navy for readability */
+    color: #1a2a6c;
     selection-background-color: #d4af37;
     selection-color: #1a2a6c;
+    font-size: 14px;
+}
+
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left: 1px solid #dcdde1;
+}
+
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+    width: 25px;
+    border-left: 1px solid #dcdde1;
 }
 
 QLineEdit:focus {

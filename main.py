@@ -84,6 +84,11 @@ class WMSApp:
         self.suppliers_view = SuppliersView(self.supplier_controller)
         self.stock_in_view = StockOperationsView(self.stock_controller, "IN")
         self.stock_out_view = StockOperationsView(self.stock_controller, "OUT")
+
+        # Connect refresh signals
+        self.items_view.data_changed.connect(self.stock_in_view.load_items)
+        self.items_view.data_changed.connect(self.stock_out_view.load_items)
+        self.suppliers_view.data_changed.connect(self.stock_in_view.load_suppliers)
         self.reports_view = ReportsView(self.report_controller)
         self.user_mgmt_view = UserManagementView(self.user_controller)
         self.settings_view = SettingsView()

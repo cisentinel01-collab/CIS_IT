@@ -104,6 +104,7 @@ class StockOperationsView(QWidget):
         layout.addWidget(submit_btn)
 
     def load_suppliers(self):
+        self.supplier_combo.clear()
         suppliers = Supplier().get_all()
         for s in suppliers:
             self.supplier_combo.addItem(s['name'], s['id'])
@@ -116,6 +117,7 @@ class StockOperationsView(QWidget):
         self.summary_label.setText(f"المجموع: {subtotal:,.2f} | الخصم: {discount_amt:,.2f} | الإجمالي: {final:,.2f}")
 
     def load_items(self):
+        self.item_combo.clear()
         items = Item().get_all()
         for i in items:
             self.item_combo.addItem(f"{i['code']} - {i['name']}", i)

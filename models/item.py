@@ -18,10 +18,15 @@ class Item(BaseModel):
             SELECT items.*, locations.name as location_name
             FROM items
             LEFT JOIN locations ON items.location_id = locations.id
-            WHERE items.is_deleted = 0 AND (items.name LIKE ? OR items.code LIKE ?)
+            WHERE items.is_deleted = 0 AND (
+                items.name LIKE ? OR
+                items.code LIKE ? OR
+                items.category LIKE ? OR
+                items.qr_code LIKE ?
+            )
         """
         pattern = f"%{term}%"
-        return self.db.execute_query(query, (pattern, pattern))
+        return self.db.execute_query(query, (pattern, pattern, pattern, pattern))
 
     def get_low_stock(self):
         query = """

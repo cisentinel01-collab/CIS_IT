@@ -23,8 +23,8 @@ class DashboardView(QWidget):
             "low_stock": self.create_card("أصناف منخفضة", "0", "fa5s.exclamation-triangle", "#e74c3c"),
             "suppliers": self.create_card("عدد الموردين", "0", "fa5s.truck", "#f1c40f"),
             "daily_ops": self.create_card("حركات اليوم", "0", "fa5s.exchange-alt", "#e67e22"),
-            "top_item": self.create_card("أكثر صنف صادر", "N/A", "fa5s.star", "#d35400"),
-            "users": self.create_card("المستخدمين", "0", "fa5s.users", "#16a085")
+            "monthly_ops": self.create_card("حركات الشهر", "0", "fa5s.calendar-alt", "#34495e"),
+            "top_item": self.create_card("أكثر صنف صادر", "N/A", "fa5s.star", "#d35400")
         }
 
         keys = list(self.cards.keys())
@@ -99,8 +99,8 @@ class DashboardView(QWidget):
         self.cards["low_stock"]._value_label.setText(str(stats["low_stock_count"]))
         self.cards["suppliers"]._value_label.setText(str(stats["total_suppliers"]))
         self.cards["daily_ops"]._value_label.setText(str(stats["daily_ops"]))
+        self.cards["monthly_ops"]._value_label.setText(str(stats["monthly_ops"]))
         self.cards["value"]._value_label.setText(f"{stats['inventory_value']:,.2f}")
-        self.cards["users"]._value_label.setText(str(stats["users_count"]))
         self.cards["top_item"]._value_label.setText(str(stats["top_item"]))
 
         # Update Low Stock Table

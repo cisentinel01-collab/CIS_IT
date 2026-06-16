@@ -90,7 +90,13 @@ class PDFGenerator:
         elements.append(Spacer(1, 20))
 
         # Items Table
-        table_data = [[self._prepare_arabic("الإجمالي"), self._prepare_arabic("السعر"), self._prepare_arabic("الكمية"), self._prepare_arabic("الصنف")]]
+        table_data = [[
+            self._prepare_arabic("الإجمالي"),
+            self._prepare_arabic("السعر"),
+            self._prepare_arabic("الكمية"),
+            self._prepare_arabic("الكود"),
+            self._prepare_arabic("الصنف")
+        ]]
         for item in items:
             price = item['price'] if 'price' in item.keys() else 0
             total = item['quantity'] * price
@@ -98,10 +104,11 @@ class PDFGenerator:
                 f"{total:,.2f}",
                 f"{price:,.2f}",
                 str(item['quantity']),
+                self._prepare_arabic(str(item.get('item_code', ''))),
                 self._prepare_arabic(item['item_name'])
             ])
 
-        item_table = Table(table_data, colWidths=[100, 100, 100, 200])
+        item_table = Table(table_data, colWidths=[90, 90, 70, 100, 150])
         font_bold = f"{self.font_name}-Bold" if self.font_name == 'Cairo' else 'Helvetica-Bold'
         item_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),

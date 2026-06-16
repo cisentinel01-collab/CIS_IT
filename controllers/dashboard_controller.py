@@ -74,6 +74,12 @@ class DashboardController:
         # Top 5 Low Stock Items
         low_stock_items = self.item_model.get_low_stock()[:5]
 
+        # Monthly Activity
+        month = datetime.now().strftime("%Y-%m")
+        monthly_ops_query = "SELECT COUNT(*) as count FROM movements WHERE date LIKE ?"
+        monthly_res = self.db.execute_query(monthly_ops_query, (f"{month}%",))
+        monthly_ops = monthly_res[0]['count'] if monthly_res else 0
+
         return {
             "total_items": total_items,
             "total_qty": total_qty,
@@ -81,6 +87,7 @@ class DashboardController:
             "total_suppliers": total_suppliers,
             "recent_movements": recent_movements,
             "daily_ops": daily_ops,
+            "monthly_ops": monthly_ops,
             "inventory_value": inventory_value,
             "users_count": users_count,
             "top_item": top_item,
