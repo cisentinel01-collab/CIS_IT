@@ -6,7 +6,11 @@ from PySide6.QtCore import Qt
 from models.item import Item
 from models.supplier import Supplier
 
+from PySide6.QtCore import Qt, Signal
+
 class StockOperationsView(QWidget):
+    data_changed = Signal()
+
     def __init__(self, controller, op_type="IN"):
         super().__init__()
         self.controller = controller
@@ -268,6 +272,7 @@ class StockOperationsView(QWidget):
 
             QMessageBox.information(self, "نجاح", f"تمت العملية بنجاح. رقم الفاتورة: {ref_no}")
             self.reset_form()
+            self.data_changed.emit()
         except Exception as e:
             import traceback
             traceback.print_exc()

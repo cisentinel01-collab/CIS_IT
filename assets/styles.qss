@@ -185,13 +185,22 @@ QTabBar::tab:selected {
     color: white;
 }
 
+#Sidebar QPushButton[active="true"] {
+    background-color: #2a3a7c;
+    border-right: 5px solid #d4af37;
+}
+
 QTabBar::tab:hover:!selected {
     background: #e1e2e6;
 }
 
 /* Financial Summary Labels */
 #GoldSummaryLabel {
-    color: #d4af37; /* Gold */
-    font-size: 18px;
+    color: #b8860b; /* Deep Gold for readability */
+    font-size: 20px;
     font-weight: bold;
+    padding: 10px;
+    background-color: #fff9e6;
+    border-radius: 5px;
+    border: 1px solid #d4af37;
 }

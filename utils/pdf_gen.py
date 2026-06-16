@@ -32,11 +32,16 @@ class PDFGenerator:
         if not text.strip(): return ""
 
         try:
-            from arabic_reshaper import reshape
+            import arabic_reshaper
             from bidi.algorithm import get_display
 
-            # Configuration for better Arabic rendering
-            reshaped_text = reshape(text)
+            # Configure reshaper for proper character joining
+            configuration = {
+                'delete_harakat': False,
+                'support_zwj': True
+            }
+            reshaper = arabic_reshaper.ArabicReshaper(configuration=configuration)
+            reshaped_text = reshaper.reshape(text)
             bidi_text = get_display(reshaped_text)
             return bidi_text
         except Exception as e:

@@ -92,6 +92,17 @@ class WMSApp:
 
         self.suppliers_view.data_changed.connect(self.stock_in_view.load_suppliers)
         self.suppliers_view.data_changed.connect(self.dashboard_view.refresh)
+
+        # Connect stock operation signals to keep everything in sync
+        self.stock_in_view.data_changed.connect(self.dashboard_view.refresh)
+        self.stock_in_view.data_changed.connect(self.items_view.refresh)
+        self.stock_in_view.data_changed.connect(self.stock_in_view.load_items)
+        self.stock_in_view.data_changed.connect(self.stock_out_view.load_items)
+
+        self.stock_out_view.data_changed.connect(self.dashboard_view.refresh)
+        self.stock_out_view.data_changed.connect(self.items_view.refresh)
+        self.stock_out_view.data_changed.connect(self.stock_in_view.load_items)
+        self.stock_out_view.data_changed.connect(self.stock_out_view.load_items)
         self.reports_view = ReportsView(self.report_controller)
         self.user_mgmt_view = UserManagementView(self.user_controller)
         self.settings_view = SettingsView()
