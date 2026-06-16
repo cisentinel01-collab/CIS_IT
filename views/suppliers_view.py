@@ -118,7 +118,7 @@ class SupplierDialog(QDialog):
 
         self.phone_input = QLineEdit()
         self.phone_input.setPlaceholderText("أرقام فقط")
-        Validator.setup_strict_validation(self.phone_input, "numeric")
+        Validator.setup_strict_validation(self.phone_input, "phone")
 
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("example@domain.com")
@@ -140,6 +140,13 @@ class SupplierDialog(QDialog):
         btns.addWidget(save_btn)
         btns.addWidget(cancel_btn)
         layout.addRow(btns)
+
+    def accept(self):
+        from utils.validator import Validator
+        if not Validator.is_not_empty(self.name_input.text()):
+            QMessageBox.warning(self, "تنبيه", "يرجى إدخال اسم المورد")
+            return
+        super().accept()
 
     def get_data(self):
         return {

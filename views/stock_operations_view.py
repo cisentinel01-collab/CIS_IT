@@ -134,6 +134,9 @@ class StockOperationsView(QWidget):
 
     def add_item_to_list(self):
         item_data = self.item_combo.currentData()
+        if not item_data:
+            QMessageBox.warning(self, "تنبيه", "يرجى اختيار صنف أولاً")
+            return
         qty = self.qty_input.value()
         if qty <= 0: return
 
@@ -182,11 +185,19 @@ class StockOperationsView(QWidget):
                 "discount_percent": self.discount_input.value()
             }
 
+            from utils.validator import Validator
             if self.op_type == "IN":
+                if not Validator.is_not_empty(self.receiver_input.text()):
+                    QMessageBox.warning(self, "تنبيه", "يرجى إدخال اسم المستلم")
+                    return
                 movement_data["supplier_id"] = self.supplier_combo.currentData()
                 movement_data["received_by"] = self.receiver_input.text()
                 self.controller.receive_stock(movement_data, self.items_to_move)
             else:
+                if not Validator.is_not_empty(self.issuing_entity.text()) or \
+                   not Validator.is_not_empty(self.receiver_name.text()):
+                    QMessageBox.warning(self, "تنبيه", "يرجى إدخال الجهة المستلمة واسم الشخص")
+                    return
                 movement_data["issuing_entity"] = self.issuing_entity.text()
                 movement_data["receiver_name"] = self.receiver_name.text()
                 movement_data["reason"] = self.reason_input.text()

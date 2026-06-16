@@ -143,3 +143,55 @@ class PDFGenerator:
             elements.append(totals_table)
 
         doc.build(elements)
+
+    def generate_report(self, filename, title, headers, data, company_info):
+        doc = SimpleDocTemplate(filename, pagesize=A4)
+        elements = []
+
+        styles = getSampleStyleSheet()
+        arabic_style = ParagraphStyle(
+            'ArabicStyle', parent=styles['Normal'], fontName=self.font_name, alignment=2, fontSize=12
+        )
+        title_style = ParagraphStyle(
+            'TitleStyle', parent=styles['Normal'], fontName=f"{self.font_name}-Bold" if self.font_name == 'Cairo' else 'Helvetica-Bold',
+            alignment=1, fontSize=18, spaceAfter=20
+        )
+
+        # Header
+        logo_path = "logo/logo.png"
+        if os.path.exists(logo_path):
+            try:
+                elements.append(Image(logo_path, width=100, height=100))
+                elements.append(Spacer(1, 12))
+            except: pass
+
+        elements.append(Paragraph(self._prepare_arabic(title), title_style))
+
+        # Table
+        table_data = [[self._prepare_arabic(h) for h in reversed(headers)]]
+        for row in data:
+            table_data.append([self._prepare_arabic(str(cell)) for row_cell in reversed(row) for cell in [row_cell]]) # Rough reverse for RTL
+            # Note: reversed() here is a simple way to simulate RTL in standard Table
+
+        # Re-evaluating the table data mapping for better safety
+        table_data = []
+        header_row = [self._prepare_arabic(h) for h in headers]
+        header_row.reverse()
+        table_data.append(header_row)
+
+        for row in data:
+            data_row = [self._prepare_arabic(str(item)) for item in row]
+            data_row.reverse()
+            table_data.append(data_row)
+
+        table = Table(table_data, colWidths=[(A4[0]-100)/len(headers)] * len(headers))
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), self.font_name),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        elements.append(table)
+
+        doc.build(elements)

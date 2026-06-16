@@ -25,8 +25,8 @@ class UserManagementView(QWidget):
         layout.addLayout(toolbar)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["اسم المستخدم", "الاسم الكامل", "الدور", "الوظيفة", "القسم", "الحالة"])
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels(["اسم المستخدم", "الاسم الكامل", "الدور", "الوظيفة", "القسم", "الحالة", "إجراءات"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
 
@@ -45,6 +45,11 @@ class UserManagementView(QWidget):
             self.table.setItem(row, 4, QTableWidgetItem(u['department'] or ""))
             self.table.setItem(row, 5, QTableWidgetItem("نشط" if u['status'] == 'active' else "معطل"))
 
+            edit_btn = QPushButton("تعديل")
+            edit_btn.setStyleSheet("background-color: #f39c12; color: white; border-radius: 3px;")
+            edit_btn.clicked.connect(lambda _, user=u: self.show_edit_dialog(user))
+            self.table.setCellWidget(row, 6, edit_btn)
+
     def show_add_dialog(self):
         dialog = UserDialog(self)
         if dialog.exec():
@@ -56,9 +61,23 @@ class UserManagementView(QWidget):
             except Exception as e:
                 QMessageBox.critical(self, "خطأ", f"فشل إضافة المستخدم: {str(e)}")
 
+    def show_edit_dialog(self, user):
+        dialog = UserDialog(self, user)
+        perms = self.controller.get_permissions(user['id'])
+        dialog.load_data(user, perms)
+        if dialog.exec():
+            data, permissions = dialog.get_data()
+            try:
+                self.controller.update_user(user['id'], data, permissions)
+                self.refresh()
+                QMessageBox.information(self, "نجاح", "تم تحديث بيانات المستخدم بنجاح")
+            except Exception as e:
+                QMessageBox.critical(self, "خطأ", f"فشل تحديث المستخدم: {str(e)}")
+
 class UserDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, user_data=None):
         super().__init__(parent)
+        self.user_data = user_data
         self.setWindowTitle("إدارة المستخدم")
         self.resize(600, 700)
         self.setLayoutDirection(Qt.RightToLeft)
@@ -135,15 +154,40 @@ class UserDialog(QDialog):
         trans = {"view": "عرض", "add": "إضافة", "edit": "تعديل", "delete": "حذف", "print": "طباعة", "export": "تصدير"}
         return trans.get(action, action)
 
+    def load_data(self, user, perms):
+        self.username_input.setText(user['username'])
+        self.username_input.setReadOnly(True)
+        self.full_name_input.setText(user['full_name'])
+        self.role_combo.setCurrentText(user['role'])
+        self.job_title_input.setText(user['job_title'] or "")
+        self.dept_input.setText(user['department'] or "")
+
+        for mod, checks in self.perm_checks.items():
+            if mod in perms:
+                for action, cb in checks.items():
+                    cb.setChecked(perms[mod][action] == 1)
+
+    def accept(self):
+        from utils.validator import Validator
+        if not Validator.is_not_empty(self.username_input.text()) or \
+           not Validator.is_not_empty(self.full_name_input.text()):
+            QMessageBox.warning(self, "تنبيه", "يرجى ملأ البيانات الأساسية")
+            return
+        if not self.user_data and not Validator.is_not_empty(self.password_input.text()):
+            QMessageBox.warning(self, "تنبيه", "يرجى إدخال كلمة المرور للمستخدم الجديد")
+            return
+        super().accept()
+
     def get_data(self):
         user_data = {
             "username": self.username_input.text(),
-            "password": self.password_input.text(),
             "full_name": self.full_name_input.text(),
             "role": self.role_combo.currentText(),
             "job_title": self.job_title_input.text(),
             "department": self.dept_input.text()
         }
+        if self.password_input.text():
+            user_data["password"] = self.password_input.text()
 
         permissions = {}
         for mod, checks in self.perm_checks.items():

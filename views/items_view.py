@@ -150,6 +150,10 @@ class ItemDialog(QDialog):
         self.category_input.setText(str(self.item_data['category'] or ""))
         self.unit_input.setText(str(self.item_data['unit'] or ""))
         self.min_stock_input.setValue(self.item_data['min_stock'])
+        if self.item_data.get('location_id'):
+            index = self.location_combo.findData(self.item_data['location_id'])
+            if index >= 0:
+                self.location_combo.setCurrentIndex(index)
 
     def setup_ui(self):
         layout = QFormLayout(self)
@@ -173,10 +177,17 @@ class ItemDialog(QDialog):
         self.min_stock_input = QSpinBox()
         self.min_stock_input.setMaximum(1000000)
 
+        self.location_combo = QComboBox()
+        from models.location import Location
+        locations = Location().get_all()
+        for loc in locations:
+            self.location_combo.addItem(loc['name'], loc['id'])
+
         layout.addRow("كود الصنف:", self.code_input)
         layout.addRow("اسم الصنف:", self.name_input)
         layout.addRow("الفئة:", self.category_input)
         layout.addRow("الوحدة:", self.unit_input)
+        layout.addRow("موقع التخزين:", self.location_combo)
         layout.addRow("الحد الأدنى:", self.min_stock_input)
 
         btns = QHBoxLayout()
@@ -189,11 +200,20 @@ class ItemDialog(QDialog):
         btns.addWidget(cancel_btn)
         layout.addRow(btns)
 
+    def accept(self):
+        from utils.validator import Validator
+        if not Validator.is_not_empty(self.code_input.text()) or \
+           not Validator.is_not_empty(self.name_input.text()):
+            QMessageBox.warning(self, "تنبيه", "يرجى ملأ الخانات الأساسية (الكود والاسم)")
+            return
+        super().accept()
+
     def get_data(self):
         return {
             "code": self.code_input.text(),
             "name": self.name_input.text(),
             "category": self.category_input.text(),
             "unit": self.unit_input.text(),
+            "location_id": self.location_combo.currentData(),
             "min_stock": self.min_stock_input.value()
         }

@@ -108,6 +108,7 @@ QLineEdit, QComboBox, QTextEdit, QSpinBox, QDoubleSpinBox {
     selection-background-color: #d4af37;
     selection-color: #1a2a6c;
     font-size: 14px;
+    qproperty-alignment: 'AlignRight | AlignVCenter';
 }
 
 QSpinBox::up-button, QDoubleSpinBox::up-button {

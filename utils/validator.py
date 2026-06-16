@@ -23,9 +23,16 @@ class Validator:
         from PySide6.QtCore import QRegularExpression
 
         if type == "name":
-            # Allow everything except digits
+            # Allow letters (Arabic/English), spaces, and basic symbols
+            # Regex: allow anything except digits 0-9
             regex = QRegularExpression(r"^[^\d]*$")
             validator = QRegularExpressionValidator(regex, line_edit)
+            line_edit.setValidator(validator)
+        elif type == "phone":
+            # Digits, plus, space, dash
+            regex = QRegularExpression(r"^[0-9+\s-]*$")
+            validator = QRegularExpressionValidator(regex, line_edit)
+            line_edit.setValidator(validator)
             line_edit.setValidator(validator)
         elif type == "numeric":
             # Digits only
@@ -37,6 +44,11 @@ class Validator:
             regex = QRegularExpression(r"^\d*\.?\d*$")
             validator = QRegularExpressionValidator(regex, line_edit)
             line_edit.setValidator(validator)
+
+    @staticmethod
+    def is_not_empty(text):
+        """Checks if text is not empty or just whitespace."""
+        return bool(text and str(text).strip())
 
     @staticmethod
     def validate_password(password):
