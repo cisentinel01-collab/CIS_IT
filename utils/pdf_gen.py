@@ -65,120 +65,177 @@ class PDFGenerator:
             return text
 
     def generate_invoice(self, filename, data, items, company_info):
-        doc = SimpleDocTemplate(filename, pagesize=A4)
+        from reportlab.lib.units import inch
+        doc = SimpleDocTemplate(filename, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
         elements = []
 
         styles = getSampleStyleSheet()
-        arabic_style = ParagraphStyle(
-            'ArabicStyle',
-            parent=styles['Normal'],
-            fontName=self.font_name,
-            alignment=2, # Right alignment
-            fontSize=12
+        # Custom Styles
+        style_title = ParagraphStyle(
+            'TitleStyle', parent=styles['Normal'], fontName='Cairo-Bold' if self.font_name == 'Cairo' else 'Helvetica-Bold',
+            fontSize=22, alignment=1, textColor=colors.HexColor("#1a2a6c"), spaceAfter=10
+        )
+        style_company = ParagraphStyle(
+            'CompanyStyle', parent=styles['Normal'], fontName='Cairo-Bold' if self.font_name == 'Cairo' else 'Helvetica-Bold',
+            fontSize=16, alignment=1, textColor=colors.HexColor("#d4af37")
+        )
+        style_contact = ParagraphStyle(
+            'ContactStyle', parent=styles['Normal'], fontName=self.font_name,
+            fontSize=10, alignment=1, textColor=colors.grey
+        )
+        style_arabic_right = ParagraphStyle(
+            'ArabicRight', parent=styles['Normal'], fontName=self.font_name,
+            fontSize=12, alignment=2, leading=15
+        )
+        style_label = ParagraphStyle(
+            'LabelStyle', parent=styles['Normal'], fontName='Cairo-Bold' if self.font_name == 'Cairo' else 'Helvetica-Bold',
+            fontSize=12, alignment=2, textColor=colors.HexColor("#1a2a6c")
         )
 
-        # Header
+        # 1. Header with Logo and Company Info
+        header_data = []
         logo_path = "logo/logo.png"
-        if not os.path.exists(logo_path) and company_info and company_info['logo_path']:
+        if not os.path.exists(logo_path) and company_info and company_info.get('logo_path'):
             logo_path = company_info['logo_path']
 
+        logo_img = ""
         if os.path.exists(logo_path):
             try:
-                elements.append(Image(logo_path, width=100, height=100))
-                elements.append(Spacer(1, 12))
-            except:
-                pass
+                logo_img = Image(logo_path, width=1.2*inch, height=1.2*inch)
+            except: pass
 
-        company_name = 'American Marine Services Free-Zone'
-        if company_info and company_info.get('company_name'):
-            company_name = company_info['company_name']
+        # Top Table for Header
+        company_name = company_info.get('company_name', 'American Marine Services Free-Zone')
+        company_addr = company_info.get('address', '')
+        phone = company_info.get('phone', '')
+        email = company_info.get('email', '')
+        company_contact = f"هاتف: {phone} | بريد: {email}" if phone or email else ""
 
-        # Ensure company name is English (if it has Arabic, we still treat as is_english=True to skip reshaper)
-        elements.append(Paragraph(self._prepare_arabic(company_name, is_english=True), arabic_style))
-        elements.append(Spacer(1, 12))
+        header_content = [
+            [logo_img],
+            [Paragraph(self._prepare_arabic(company_name, is_english=True), style_company)],
+            [Paragraph(self._prepare_arabic(company_addr), style_contact)],
+            [Paragraph(self._prepare_arabic(company_contact), style_contact)],
+        ]
 
+        header_table = Table(header_content, colWidths=[doc.width])
+        header_table.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
+        elements.append(header_table)
+        elements.append(Spacer(1, 0.2*inch))
+
+        # 2. Separator Line
+        elements.append(Table([[""]], colWidths=[doc.width], style=[('LINEBELOW', (0,0), (-1,-1), 2, colors.HexColor("#1a2a6c"))]))
+        elements.append(Spacer(1, 0.2*inch))
+
+        # 3. Document Title
         title_text = data.get('report_title')
         if not title_text:
-            title_text = "فاتورة وارد" if data['type'] == 'IN' else "سند صرف"
+            title_text = "فاتورة توريد مخزني" if data['type'] == 'IN' else "سند صرف مخزني"
+        elements.append(Paragraph(self._prepare_arabic(title_text), style_title))
+        elements.append(Spacer(1, 0.2*inch))
 
-        elements.append(Paragraph(self._prepare_arabic(title_text), arabic_style))
-        elements.append(Spacer(1, 20))
+        # 4. Details Section (Reference, Date, etc.)
+        party_label = "المورد:" if data['type'] == 'IN' else "المستلم:"
+        party_name = data.get('supplier_name') if data['type'] == 'IN' else data.get('receiver_name', '')
 
-        # Info Table
-        info_data = [
-            [self._prepare_arabic(f"التاريخ: {data['date']}"), self._prepare_arabic(f"الرقم: {data['reference_no']}")],
+        details_data = [
+            [self._prepare_arabic(data['reference_no']), Paragraph(self._prepare_arabic("رقم العملية:"), style_label),
+             self._prepare_arabic(data['date']), Paragraph(self._prepare_arabic("التاريخ:"), style_label)],
+            ["", "", self._prepare_arabic(party_name), Paragraph(self._prepare_arabic(party_label), style_label)]
         ]
-        if data['type'] == 'IN':
-            supplier_name = data['supplier_name'] if 'supplier_name' in data.keys() else ""
-            info_data.append([self._prepare_arabic(f"المورد: {supplier_name}"), ""])
-        else:
-            receiver_name = data['receiver_name'] if 'receiver_name' in data.keys() else ""
-            info_data.append([self._prepare_arabic(f"المستلم: {receiver_name}"), ""])
 
-        info_table = Table(info_data, colWidths=[250, 250])
-        elements.append(info_table)
-        elements.append(Spacer(1, 20))
+        details_table = Table(details_data, colWidths=[1.5*inch, 1.2*inch, 2.5*inch, 1.2*inch])
+        details_table.setStyle(TableStyle([
+            ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
+            ('FONTNAME', (0,0), (-1,-1), self.font_name),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ]))
+        elements.append(details_table)
+        elements.append(Spacer(1, 0.3*inch))
 
-        # Items Table
-        table_data = [[
+        # 5. Items Table
+        table_headers = [
             self._prepare_arabic("الإجمالي"),
             self._prepare_arabic("السعر"),
             self._prepare_arabic("الكمية"),
-            self._prepare_arabic("الكود"),
-            self._prepare_arabic("الصنف")
-        ]]
+            self._prepare_arabic("الوحدة"),
+            self._prepare_arabic("كود الصنف"),
+            self._prepare_arabic("اسم الصنف")
+        ]
+
+        table_rows = [table_headers]
         for item in items:
-            price = item['price'] if 'price' in item.keys() else 0
-            total = item['quantity'] * price
-            table_data.append([
+            price = item.get('price', 0)
+            qty = item.get('quantity', 0)
+            total = price * qty
+            table_rows.append([
                 f"{total:,.2f}",
                 f"{price:,.2f}",
-                str(item['quantity']),
-                self._prepare_arabic(str(item.get('item_code', ''))),
-                self._prepare_arabic(item['item_name'])
+                str(qty),
+                self._prepare_arabic(item.get('unit', '')),
+                self._prepare_arabic(item.get('item_code', '')),
+                self._prepare_arabic(item.get('item_name', ''))
             ])
 
-        item_table = Table(table_data, colWidths=[90, 90, 70, 100, 150])
-        font_bold = f"{self.font_name}-Bold" if self.font_name == 'Cairo' else 'Helvetica-Bold'
-        item_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        # Modern Table Style
+        col_widths = [1.0*inch, 1.0*inch, 0.8*inch, 0.8*inch, 1.2*inch, 2.5*inch]
+        items_table = Table(table_rows, colWidths=col_widths, repeatRows=1)
+        items_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1a2a6c")),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, -1), self.font_name),
             ('FONTNAME', (0, 0), (-1, 0), 'Cairo-Bold' if self.font_name == 'Cairo' else 'Helvetica-Bold'),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.white]),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ]))
-        elements.append(item_table)
-        elements.append(Spacer(1, 20))
+        elements.append(items_table)
+        elements.append(Spacer(1, 0.2*inch))
 
-        # Totals and Discounts
-        if 'subtotal' in data.keys():
-            totals_data = [
-                [f"{data['subtotal']:,.2f}", self._prepare_arabic("المجموع الفرعي:")],
-                [f"{data['discount_amount']:,.2f} ({data['discount_percent']}%)", self._prepare_arabic("الخصم:")],
-                [f"{data['final_total']:,.2f}", self._prepare_arabic("الإجمالي النهائي:")]
+        # 6. Summary and Financials
+        if 'subtotal' in data:
+            summary_data = [
+                [f"{data['subtotal']:,.2f}", Paragraph(self._prepare_arabic("المجموع الفرعي:"), style_arabic_right)],
+                [f"{data['discount_amount']:,.2f} ({data['discount_percent']}%)", Paragraph(self._prepare_arabic("إجمالي الخصم:"), style_arabic_right)],
+                [f"{data['final_total']:,.2f}", Paragraph(self._prepare_arabic("الإجمالي النهائي:"), style_label)],
             ]
-            totals_table = Table(totals_data, colWidths=[100, 150])
-            totals_table.setStyle(TableStyle([
+            summary_table = Table(summary_data, colWidths=[1.5*inch, 1.5*inch])
+            summary_table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
                 ('FONTNAME', (0, 0), (-1, -1), self.font_name),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('LINEABOVE', (0, 2), (0, 2), 1, colors.HexColor("#1a2a6c")),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ]))
-            elements.append(totals_table)
 
-        elements.append(Spacer(1, 30))
+            # Wrap summary in a table to align right
+            outer_summary = Table([[summary_table]], colWidths=[doc.width])
+            outer_summary.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'RIGHT')]))
+            elements.append(outer_summary)
 
-        # Stamp Area
-        stamp_data = [["", self._prepare_arabic("ختم الشركة")]]
-        stamp_table = Table(stamp_data, colWidths=[350, 150])
-        stamp_table.setStyle(TableStyle([
-            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, -1), 'Cairo-Bold' if self.font_name == 'Cairo' else 'Helvetica-Bold'),
-            ('BOX', (1, 0), (1, 0), 1, colors.black),
-            ('BOTTOMPADDING', (1, 0), (1, 0), 60), # Space for the actual stamp
+        # 7. Notes
+        if data.get('notes'):
+            elements.append(Spacer(1, 0.2*inch))
+            elements.append(Paragraph(self._prepare_arabic("ملاحظات:"), style_label))
+            elements.append(Paragraph(self._prepare_arabic(data['notes']), style_arabic_right))
+
+        # 8. Footer (Signatures and Stamp)
+        elements.append(Spacer(1, 0.5*inch))
+        footer_data = [
+            [self._prepare_arabic("توقيع المستلم"), "", self._prepare_arabic("توقيع أمين المخزن"), "", self._prepare_arabic("ختم الشركة")],
+            ["\n\n....................", "", "\n\n....................", "", ""]
+        ]
+        footer_table = Table(footer_data, colWidths=[1.5*inch, 0.5*inch, 1.5*inch, 0.5*inch, 2.0*inch])
+        footer_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), self.font_name),
+            ('BOX', (4, 0), (4, 1), 1, colors.black), # Stamp box
+            ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
         ]))
-        elements.append(stamp_table)
+        elements.append(footer_table)
 
         doc.build(elements)
 

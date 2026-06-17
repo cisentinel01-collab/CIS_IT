@@ -290,7 +290,8 @@ class StockOperationsView(QWidget):
                 movement_data["reason"] = self.reason_input.text()
                 self.controller.issue_stock(movement_data, self.items_to_move)
 
-            QMessageBox.information(self, "نجاح", f"تمت العملية بنجاح. رقم الفاتورة: {ref_no}")
+            msg = f"تمت العملية بنجاح. رقم الفاتورة: {ref_no}\nتم حفظ نسخة PDF في مجلد reports."
+            QMessageBox.information(self, "نجاح", msg)
             self.reset_form()
             self.data_changed.emit()
             self.load_history()
