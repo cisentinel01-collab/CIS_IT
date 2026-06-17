@@ -85,6 +85,13 @@ class StockOperationsView(QWidget):
         selector_layout.addWidget(QLabel("الصنف:"))
         selector_layout.addWidget(self.item_combo, 2)
 
+        scan_item_btn = QPushButton()
+        scan_item_btn.setIcon(qta.icon("fa5s.qrcode", color="#1a2a6c"))
+        scan_item_btn.setFixedSize(40, 40)
+        scan_item_btn.setToolTip("مسح QR كود لاختيار صنف")
+        scan_item_btn.clicked.connect(self.handle_item_scan)
+        selector_layout.addWidget(scan_item_btn)
+
         self.qty_input = QSpinBox()
         self.qty_input.setMinimum(1)
         self.qty_input.setMaximum(1000000)
@@ -183,6 +190,16 @@ class StockOperationsView(QWidget):
         discount_amt = (subtotal * discount_pct) / 100
         final = subtotal - discount_amt
         self.summary_label.setText(f"المجموع: {subtotal:,.2f} | الخصم: {discount_amt:,.2f} | الإجمالي: {final:,.2f}")
+
+    def handle_item_scan(self):
+        code, ok = QMessageBox.getText(self, "مسح QR", "يرجى مسح كود QR الصنف:")
+        if ok and code:
+            for i in range(self.item_combo.count()):
+                item_data = self.item_combo.itemData(i)
+                if item_data and (item_data['code'] == code or item_data.get('qr_code') == code):
+                    self.item_combo.setCurrentIndex(i)
+                    return
+            QMessageBox.warning(self, "تنبيه", "الصنف غير موجود في القائمة")
 
     def load_items(self):
         self.item_combo.clear()

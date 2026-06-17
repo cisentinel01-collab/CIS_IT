@@ -26,27 +26,44 @@ class PDFGenerator:
             print(f"Font registration error: {e}")
             self.font_name = 'Helvetica'
 
-    def _prepare_arabic(self, text):
+    def _prepare_arabic(self, text, is_english=False):
         if text is None: return ""
         text = str(text)
         if not text.strip(): return ""
 
-        try:
-            import arabic_reshaper
-            from bidi.algorithm import get_display
+        # Split text by words to handle mixed Arabic/English
+        words = text.split()
+        prepared_words = []
 
-            # Configure reshaper for proper character joining
-            configuration = {
+        import arabic_reshaper
+        from bidi.algorithm import get_display
+
+        reshaper = arabic_reshaper.ArabicReshaper(
+            configuration={
                 'delete_harakat': False,
-                'support_zwj': True
+                'support_zwj': True,
+                'unreshape_quotes': True,
+                'use_expanded_forms': True
             }
-            reshaper = arabic_reshaper.ArabicReshaper(configuration=configuration)
-            reshaped_text = reshaper.reshape(text)
-            bidi_text = get_display(reshaped_text)
-            return bidi_text
-        except Exception as e:
-            print(f"Arabic preparing error: {e}")
-            return text
+        )
+
+        for word in words:
+            # Check if word contains any Arabic characters
+            if any("\u0600" <= c <= "\u06FF" for c in word):
+                reshaped = reshaper.reshape(word)
+                prepared_words.append(get_display(reshaped))
+            else:
+                prepared_words.append(word)
+
+        # For full RTL support on reshaped text
+        # If the entire line is mixed, we might need a more complex bidi on the whole line
+        # but usually word-by-word is safer for simple ERP outputs.
+        # Let's try whole-text bidi if any Arabic is present.
+        if any("\u0600" <= c <= "\u06FF" for c in text):
+            reshaped_full = reshaper.reshape(text)
+            return get_display(reshaped_full)
+
+        return text
 
     def generate_invoice(self, filename, data, items, company_info):
         doc = SimpleDocTemplate(filename, pagesize=A4)
@@ -73,8 +90,12 @@ class PDFGenerator:
             except:
                 pass
 
-        company_name = company_info['company_name'] if company_info else 'American Marine Services'
-        elements.append(Paragraph(self._prepare_arabic(company_name), arabic_style))
+        company_name = 'American Marine Services Free-Zone'
+        if company_info and company_info.get('company_name'):
+            company_name = company_info['company_name']
+
+        # Ensure company name is English (if it has Arabic, we still treat as is_english=True to skip reshaper)
+        elements.append(Paragraph(self._prepare_arabic(company_name, is_english=True), arabic_style))
         elements.append(Spacer(1, 12))
 
         title_text = data.get('report_title')

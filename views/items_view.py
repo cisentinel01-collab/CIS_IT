@@ -33,12 +33,6 @@ class ItemsView(QWidget):
         add_btn.clicked.connect(self.show_add_dialog)
         toolbar.addWidget(add_btn)
 
-        scan_btn = QPushButton("قراءة QR")
-        scan_btn.setObjectName("GoldButton")
-        scan_btn.setIcon(qta.icon("fa5s.qrcode", color="white"))
-        scan_btn.clicked.connect(self.handle_scan)
-        toolbar.addWidget(scan_btn)
-
         import_btn = QPushButton("استيراد")
         import_btn.setObjectName("SecondaryButton")
         import_btn.clicked.connect(self.handle_import)
@@ -89,16 +83,6 @@ class ItemsView(QWidget):
         else:
             self.refresh()
 
-    def handle_scan(self):
-        # Mocking QR scan
-        code, ok = QMessageBox.getText(self, "مسح QR", "يرجى مسح كود QR أو إدخال الكود يدوياً:")
-        if ok and code:
-            from models.item import Item
-            item = Item().get_by_code(code)
-            if item:
-                self.search_input.setText(code)
-            else:
-                QMessageBox.warning(self, "تنبيه", "الصنف غير موجود")
 
     def show_add_dialog(self):
         dialog = ItemDialog(self)
@@ -183,7 +167,15 @@ class ItemDialog(QDialog):
         for loc in locations:
             self.location_combo.addItem(loc['name'], loc['id'])
 
-        layout.addRow("كود الصنف:", self.code_input)
+        code_row = QHBoxLayout()
+        code_row.addWidget(self.code_input)
+        scan_btn = QPushButton()
+        scan_btn.setIcon(qta.icon("fa5s.qrcode", color="#1a2a6c"))
+        scan_btn.setFixedSize(40, 40)
+        scan_btn.setToolTip("مسح QR كود")
+        scan_btn.clicked.connect(self.handle_scan)
+        code_row.addWidget(scan_btn)
+        layout.addRow("كود الصنف:", code_row)
         layout.addRow("اسم الصنف:", self.name_input)
         layout.addRow("الفئة:", self.category_input)
         layout.addRow("الوحدة:", self.unit_input)
