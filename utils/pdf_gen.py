@@ -31,39 +31,34 @@ class PDFGenerator:
         text = str(text)
         if not text.strip(): return ""
 
-        # Split text by words to handle mixed Arabic/English
-        words = text.split()
-        prepared_words = []
+        if is_english:
+            return text
 
-        import arabic_reshaper
-        from bidi.algorithm import get_display
+        try:
+            import arabic_reshaper
+            from bidi.algorithm import get_display
 
-        reshaper = arabic_reshaper.ArabicReshaper(
-            configuration={
-                'delete_harakat': False,
-                'support_zwj': True,
-                'unreshape_quotes': True,
-                'use_expanded_forms': True
-            }
-        )
+            # Configure reshaper to handle joining correctly
+            reshaper = arabic_reshaper.ArabicReshaper(
+                configuration={
+                    'delete_harakat': False,
+                    'support_zwj': True,
+                    'unreshape_quotes': True,
+                    'use_expanded_forms': True,
+                    'reshape_digits': False # Keep numbers as they are
+                }
+            )
 
-        for word in words:
-            # Check if word contains any Arabic characters
-            if any("\u0600" <= c <= "\u06FF" for c in word):
-                reshaped = reshaper.reshape(word)
-                prepared_words.append(get_display(reshaped))
+            # Check if there's any Arabic character
+            if any("\u0600" <= c <= "\u06FF" for c in text):
+                reshaped_text = reshaper.reshape(text)
+                # get_display handles RTL reordering for mixed text (Arabic + English + Numbers)
+                return get_display(reshaped_text)
             else:
-                prepared_words.append(word)
-
-        # For full RTL support on reshaped text
-        # If the entire line is mixed, we might need a more complex bidi on the whole line
-        # but usually word-by-word is safer for simple ERP outputs.
-        # Let's try whole-text bidi if any Arabic is present.
-        if any("\u0600" <= c <= "\u06FF" for c in text):
-            reshaped_full = reshaper.reshape(text)
-            return get_display(reshaped_full)
-
-        return text
+                return text
+        except Exception as e:
+            print(f"Arabic preparing error: {e}")
+            return text
 
     def generate_invoice(self, filename, data, items, company_info):
         doc = SimpleDocTemplate(filename, pagesize=A4)

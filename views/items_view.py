@@ -2,11 +2,9 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QDialog, QFormLayout, QComboBox,
                              QSpinBox, QMessageBox, QFileDialog)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 import qtawesome as qta
 import os
-
-from PySide6.QtCore import Qt, Signal
 
 class ItemsView(QWidget):
     data_changed = Signal()
@@ -23,17 +21,17 @@ class ItemsView(QWidget):
         # Toolbar
         toolbar = QHBoxLayout()
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("بحث عن صنف...")
+        self.search_input.setPlaceholderText("بحث عن صنف (اسم، كود، فئة)...")
         self.search_input.textChanged.connect(self.handle_search)
         toolbar.addWidget(self.search_input)
 
-        add_btn = QPushButton("إضافة صنف")
+        add_btn = QPushButton("إضافة صنف جديد")
         add_btn.setObjectName("PrimaryButton")
         add_btn.setIcon(qta.icon("fa5s.plus", color="white"))
         add_btn.clicked.connect(self.show_add_dialog)
         toolbar.addWidget(add_btn)
 
-        import_btn = QPushButton("استيراد")
+        import_btn = QPushButton("استيراد من Excel")
         import_btn.setObjectName("SecondaryButton")
         import_btn.clicked.connect(self.handle_import)
         toolbar.addWidget(import_btn)
@@ -44,8 +42,8 @@ class ItemsView(QWidget):
         self.table = QTableWidget()
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["الكود", "الاسم", "الفئة", "الوحدة", "الموقع", "الكمية", "الحد الأدنى"])
+        self.table.setColumnCount(8)
+        self.table.setHorizontalHeaderLabels(["الكود", "الاسم", "الفئة", "الوحدة", "الموقع", "الكمية", "الحد الأدنى", "إجراءات"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
 
@@ -56,9 +54,6 @@ class ItemsView(QWidget):
             items = self.controller.get_all_items()
 
         self.table.setRowCount(0)
-        self.table.setColumnCount(8)
-        self.table.setHorizontalHeaderLabels(["الكود", "الاسم", "الفئة", "الوحدة", "الموقع", "الكمية", "الحد الأدنى", "إجراءات"])
-
         for item in items:
             row = self.table.rowCount()
             self.table.insertRow(row)
@@ -71,7 +66,7 @@ class ItemsView(QWidget):
             self.table.setItem(row, 6, QTableWidgetItem(str(item['min_stock'])))
 
             edit_btn = QPushButton("تعديل")
-            edit_btn.setStyleSheet("background-color: #f39c12; color: white; border-radius: 3px;")
+            edit_btn.setStyleSheet("background-color: #f39c12; color: white; border-radius: 5px; font-weight: bold;")
             edit_btn.clicked.connect(lambda _, i=item: self.show_edit_dialog(i))
             self.table.setCellWidget(row, 7, edit_btn)
 
@@ -82,7 +77,6 @@ class ItemsView(QWidget):
             self.refresh(items)
         else:
             self.refresh()
-
 
     def show_add_dialog(self):
         dialog = ItemDialog(self)
@@ -115,6 +109,7 @@ class ItemsView(QWidget):
                     self.controller.add_item(item)
                 self.refresh()
                 QMessageBox.information(self, "نجاح", f"تم استيراد {len(items)} صنف بنجاح")
+                self.data_changed.emit()
             except Exception as e:
                 QMessageBox.critical(self, "خطأ", f"فشل الاستيراد: {str(e)}")
 
@@ -122,22 +117,12 @@ class ItemDialog(QDialog):
     def __init__(self, parent=None, item_data=None):
         super().__init__(parent)
         self.item_data = item_data
-        self.setWindowTitle("تعديل صنف" if item_data else "إضافة صنف جديد")
+        self.setWindowTitle("تعديل بيانات الصنف" if item_data else "إضافة صنف جديد")
+        self.resize(500, 450)
         self.setLayoutDirection(Qt.RightToLeft)
         self.setup_ui()
         if item_data:
             self.load_data()
-
-    def load_data(self):
-        self.code_input.setText(str(self.item_data['code']))
-        self.name_input.setText(str(self.item_data['name']))
-        self.category_input.setText(str(self.item_data['category'] or ""))
-        self.unit_input.setText(str(self.item_data['unit'] or ""))
-        self.min_stock_input.setValue(self.item_data['min_stock'])
-        if self.item_data.get('location_id'):
-            index = self.location_combo.findData(self.item_data['location_id'])
-            if index >= 0:
-                self.location_combo.setCurrentIndex(index)
 
     def setup_ui(self):
         layout = QFormLayout(self)
@@ -146,16 +131,26 @@ class ItemDialog(QDialog):
         self.code_input = QLineEdit()
         self.code_input.setPlaceholderText("مثال: ITEM-101")
 
+        # QR Scan button inside dialog
+        code_row = QHBoxLayout()
+        code_row.addWidget(self.code_input)
+        scan_btn = QPushButton()
+        scan_btn.setIcon(qta.icon("fa5s.qrcode", color="#1a2a6c"))
+        scan_btn.setFixedSize(40, 40)
+        scan_btn.setToolTip("مسح كود QR تلقائياً")
+        scan_btn.clicked.connect(self.handle_scan)
+        code_row.addWidget(scan_btn)
+
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("أدخل اسم الصنف بالكامل")
+        self.name_input.setPlaceholderText("أدخل اسم الصنف")
         Validator.setup_strict_validation(self.name_input, "name")
 
         self.category_input = QLineEdit()
-        self.category_input.setPlaceholderText("مثال: قطع غيار، زيوت...")
+        self.category_input.setPlaceholderText("مثال: قطع غيار")
         Validator.setup_strict_validation(self.category_input, "name")
 
         self.unit_input = QLineEdit()
-        self.unit_input.setPlaceholderText("مثال: قطعة، لتر، كجم")
+        self.unit_input.setPlaceholderText("مثال: قطعة")
         Validator.setup_strict_validation(self.unit_input, "name")
 
         self.min_stock_input = QSpinBox()
@@ -167,14 +162,6 @@ class ItemDialog(QDialog):
         for loc in locations:
             self.location_combo.addItem(loc['name'], loc['id'])
 
-        code_row = QHBoxLayout()
-        code_row.addWidget(self.code_input)
-        scan_btn = QPushButton()
-        scan_btn.setIcon(qta.icon("fa5s.qrcode", color="#1a2a6c"))
-        scan_btn.setFixedSize(40, 40)
-        scan_btn.setToolTip("مسح QR كود")
-        scan_btn.clicked.connect(self.handle_scan)
-        code_row.addWidget(scan_btn)
         layout.addRow("كود الصنف:", code_row)
         layout.addRow("اسم الصنف:", self.name_input)
         layout.addRow("الفئة:", self.category_input)
@@ -191,6 +178,22 @@ class ItemDialog(QDialog):
         btns.addWidget(save_btn)
         btns.addWidget(cancel_btn)
         layout.addRow(btns)
+
+    def handle_scan(self):
+        code, ok = QMessageBox.getText(self, "مسح QR", "يرجى مسح كود QR الآن:")
+        if ok and code:
+            self.code_input.setText(code)
+
+    def load_data(self):
+        self.code_input.setText(str(self.item_data['code']))
+        self.name_input.setText(str(self.item_data['name']))
+        self.category_input.setText(str(self.item_data['category'] or ""))
+        self.unit_input.setText(str(self.item_data['unit'] or ""))
+        self.min_stock_input.setValue(self.item_data['min_stock'])
+        if self.item_data.get('location_id'):
+            index = self.location_combo.findData(self.item_data['location_id'])
+            if index >= 0:
+                self.location_combo.setCurrentIndex(index)
 
     def accept(self):
         from utils.validator import Validator

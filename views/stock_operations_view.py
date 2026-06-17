@@ -2,12 +2,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QComboBox, QSpinBox, QFormLayout,
                              QGroupBox, QMessageBox, QTabWidget)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
+import qtawesome as qta
 from models.item import Item
 from models.supplier import Supplier
-import qtawesome as qta
-
-from PySide6.QtCore import Qt, Signal
 
 class StockOperationsView(QWidget):
     data_changed = Signal()
@@ -206,7 +204,7 @@ class StockOperationsView(QWidget):
         self.item_combo.clear()
         items = Item().get_all()
         for i in items:
-            self.item_combo.addItem(f"{i['code']} - {i['name']}", i)
+            self.item_combo.addItem(f"{i['code']} - {i['name']} (المخزون: {i['current_stock']})", i)
 
     def add_item_to_list(self):
         item_data = self.item_combo.currentData()
@@ -217,9 +215,11 @@ class StockOperationsView(QWidget):
         if qty <= 0: return
 
         if self.op_type == "OUT":
-            if qty > item_data['current_stock']:
+            # RE-FETCH ITEM DATA TO ENSURE LATEST STOCK
+            current_item = Item().get_by_id(item_data['id'])
+            if qty > current_item['current_stock']:
                 QMessageBox.warning(self, "تنبيه المخزون",
-                                  f"الكمية المطلوبة ({qty}) أكبر من المخزون المتاح ({item_data['current_stock']})")
+                                  f"الكمية المطلوبة ({qty}) أكبر من المخزون المتاح ({current_item['current_stock']})")
                 return
 
         price = 0
@@ -291,6 +291,7 @@ class StockOperationsView(QWidget):
             QMessageBox.information(self, "نجاح", f"تمت العملية بنجاح. رقم الفاتورة: {ref_no}")
             self.reset_form()
             self.data_changed.emit()
+            self.load_history()
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -309,3 +310,4 @@ class StockOperationsView(QWidget):
             self.issuing_entity.clear()
             self.receiver_name.clear()
             self.reason_input.clear()
+        self.load_items() # REFRESH COMBO BOX DATA
