@@ -17,21 +17,24 @@ QWidget {
 
 #Sidebar QPushButton {
     background-color: transparent;
-    color: white;
+    color: #ecf0f1;
     border: none;
     padding: 15px;
     text-align: right;
-    font-size: 14px;
+    font-size: 15px;
     border-right: 5px solid transparent;
 }
 
 #Sidebar QPushButton:hover {
     background-color: #2a3a7c;
+    color: #d4af37;
 }
 
 #Sidebar QPushButton[active="true"] {
     background-color: #2a3a7c;
     border-right: 5px solid #d4af37; /* Gold accent */
+    color: #d4af37;
+    font-weight: bold;
 }
 
 /* Header */
@@ -196,11 +199,11 @@ QTabBar::tab:hover:!selected {
 
 /* Financial Summary Labels */
 #GoldSummaryLabel {
-    color: #b8860b; /* Deep Gold for readability */
+    color: #1a2a6c;
     font-size: 20px;
     font-weight: bold;
-    padding: 10px;
-    background-color: #fff9e6;
-    border-radius: 5px;
-    border: 1px solid #d4af37;
+    padding: 15px;
+    background-color: #d4af37;
+    border-radius: 8px;
+    border: 1px solid #b8860b;
 }

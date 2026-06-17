@@ -80,6 +80,8 @@ class StockOperationsView(QWidget):
         selector_layout = QHBoxLayout(selector_group)
 
         self.item_combo = QComboBox()
+        self.item_combo.setEditable(True)
+        self.item_combo.setPlaceholderText("اختر صنف أو ابحث بالكود...")
         self.load_items()
         selector_layout.addWidget(QLabel("الصنف:"))
         selector_layout.addWidget(self.item_combo, 2)

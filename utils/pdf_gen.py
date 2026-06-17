@@ -15,44 +15,48 @@ class PDFGenerator:
     def __init__(self):
         self.font_path = "assets/fonts/Cairo-Regular.ttf"
         self.bold_font_path = "assets/fonts/Cairo-Bold.ttf"
+        self.font_name = 'Cairo'
+
         try:
             if os.path.exists(self.font_path):
                 pdfmetrics.registerFont(TTFont('Cairo', self.font_path))
                 pdfmetrics.registerFont(TTFont('Cairo-Bold', self.bold_font_path))
-                self.font_name = 'Cairo'
+                pdfmetrics.registerFontFamily('Cairo', normal='Cairo', bold='Cairo-Bold')
             else:
                 self.font_name = 'Helvetica'
         except Exception as e:
             print(f"Font registration error: {e}")
             self.font_name = 'Helvetica'
 
-    def _prepare_arabic(self, text, is_english=False):
-        if text is None: return ""
-        text = str(text)
-        if not text.strip(): return ""
-
-        if is_english:
-            return text
-
+        # Initialize reshaper once
         try:
-            import arabic_reshaper
-            from bidi.algorithm import get_display
-
-            # Configure reshaper to handle joining correctly
-            reshaper = arabic_reshaper.ArabicReshaper(
+            from arabic_reshaper import ArabicReshaper
+            self.reshaper = ArabicReshaper(
                 configuration={
                     'delete_harakat': False,
                     'support_zwj': True,
                     'unreshape_quotes': True,
                     'use_expanded_forms': True,
-                    'reshape_digits': False # Keep numbers as they are
+                    'reshape_digits': False
                 }
             )
+        except ImportError:
+            self.reshaper = None
+
+    def _prepare_arabic(self, text, is_english=False):
+        if text is None: return ""
+        text = str(text)
+        if not text.strip(): return ""
+
+        if is_english or self.reshaper is None:
+            return text
+
+        try:
+            from bidi.algorithm import get_display
 
             # Check if there's any Arabic character
             if any("\u0600" <= c <= "\u06FF" for c in text):
-                reshaped_text = reshaper.reshape(text)
-                # get_display handles RTL reordering for mixed text (Arabic + English + Numbers)
+                reshaped_text = self.reshaper.reshape(text)
                 return get_display(reshaped_text)
             else:
                 return text
@@ -141,7 +145,7 @@ class PDFGenerator:
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, -1), self.font_name),
-            ('FONTNAME', (0, 0), (-1, 0), font_bold),
+            ('FONTNAME', (0, 0), (-1, 0), 'Cairo-Bold' if self.font_name == 'Cairo' else 'Helvetica-Bold'),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ]))
@@ -170,7 +174,7 @@ class PDFGenerator:
         stamp_table = Table(stamp_data, colWidths=[350, 150])
         stamp_table.setStyle(TableStyle([
             ('ALIGN', (1, 0), (1, 0), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, -1), f"{self.font_name}-Bold" if self.font_name == 'Cairo' else 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Cairo-Bold' if self.font_name == 'Cairo' else 'Helvetica-Bold'),
             ('BOX', (1, 0), (1, 0), 1, colors.black),
             ('BOTTOMPADDING', (1, 0), (1, 0), 60), # Space for the actual stamp
         ]))
@@ -187,7 +191,7 @@ class PDFGenerator:
             'ArabicStyle', parent=styles['Normal'], fontName=self.font_name, alignment=2, fontSize=12
         )
         title_style = ParagraphStyle(
-            'TitleStyle', parent=styles['Normal'], fontName=f"{self.font_name}-Bold" if self.font_name == 'Cairo' else 'Helvetica-Bold',
+            'TitleStyle', parent=styles['Normal'], fontName='Cairo-Bold' if self.font_name == 'Cairo' else 'Helvetica-Bold',
             alignment=1, fontSize=18, spaceAfter=20
         )
 
