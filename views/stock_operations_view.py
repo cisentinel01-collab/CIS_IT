@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
 from PySide6.QtCore import Qt
 from models.item import Item
 from models.supplier import Supplier
+import qtawesome as qta
 
 from PySide6.QtCore import Qt, Signal
 
