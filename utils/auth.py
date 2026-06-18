@@ -24,20 +24,19 @@ class AuthManager:
             return False
 
         role = cls._current_user['role']
-        if role == 'admin':
+
+        # 1. مسئول المخزن (Full Access)
+        if role == 'warehouse_manager':
             return True
 
-        # Warehouse Keeper: Core operations
-        if role == 'warehouse_keeper':
-            if module in ['items', 'suppliers', 'stock_in', 'stock_out', 'locations', 'dashboard']:
-                if action == 'delete':
-                    return False
+        # 2. المتابعة (View/Report Only)
+        if role == 'follow_up':
+            # Allow viewing dashboard and reports
+            if module in ['dashboard', 'reports']:
                 return True
-
-        # Supervisor: Reports only
-        if role == 'supervisor':
-            if module in ['reports', 'dashboard']:
-                if action in [None, 'view', 'export']:
-                    return True
+            # Allow viewing lists (Items, Suppliers, Locations) but no editing
+            if module in ['items', 'suppliers', 'locations']:
+                return action in [None, 'view', 'export']
+            return False
 
         return False

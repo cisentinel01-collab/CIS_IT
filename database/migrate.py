@@ -5,37 +5,30 @@ def migrate():
     db = DBManager()
     user_model = User()
 
-    # Check if admin exists
-    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'admin'")
+    # Responsibilities were consolidated to 2 roles per user request:
+    # 1. مسئول المخزن (warehouse_manager) - Full Access
+    # 2. المتابعة (follow_up) - View only
+
+    # Check if manager exists
+    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'warehouse_manager'")
     if res[0]['count'] == 0:
-        print("Creating default admin...")
+        print("Creating default manager...")
         user_model.create_user({
             "username": "admin",
             "password": "admin",
-            "full_name": "المدير العام",
-            "role": "admin"
+            "full_name": "مسؤول المخزن",
+            "role": "warehouse_manager"
         })
 
-    # Check if keeper exists
-    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'warehouse_keeper'")
+    # Check if follow_up exists
+    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'follow_up'")
     if res[0]['count'] == 0:
-        print("Creating default warehouse keeper...")
+        print("Creating default follow-up user...")
         user_model.create_user({
-            "username": "keeper",
-            "password": "keeper",
-            "full_name": "أمين المخزن",
-            "role": "warehouse_keeper"
-        })
-
-    # Check if supervisor exists
-    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'supervisor'")
-    if res[0]['count'] == 0:
-        print("Creating default supervisor...")
-        user_model.create_user({
-            "username": "supervisor",
-            "password": "supervisor",
-            "full_name": "المشرف",
-            "role": "supervisor"
+            "username": "user",
+            "password": "user",
+            "full_name": "المتابعة",
+            "role": "follow_up"
         })
 
     print("Migration complete.")

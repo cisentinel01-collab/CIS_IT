@@ -106,6 +106,13 @@ QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QDateEdit {
     padding: 10px;
     color: #000000; /* Black text for maximum clarity */
     font-size: 15px;
+    qproperty-alignment: 'AlignCenter'; /* Center text */
+}
+
+/* Fix spinbox text overlap in RTL */
+QSpinBox, QDoubleSpinBox {
+    padding-left: 35px;
+    padding-right: 35px;
 }
 
 QComboBox {

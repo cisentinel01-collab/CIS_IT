@@ -298,6 +298,7 @@ class StockOperationsView(QWidget):
             }
 
             from utils.validator import Validator
+            from utils.notifications import NotificationManager
             if self.op_type == "IN":
                 if not Validator.is_not_empty(self.receiver_input.text()):
                     QMessageBox.warning(self, "تنبيه", "يرجى إدخال اسم المستلم")
@@ -307,7 +308,7 @@ class StockOperationsView(QWidget):
                     return
                 movement_data["supplier_id"] = self.supplier_combo.currentData()
                 movement_data["received_by"] = self.receiver_input.text()
-                self.controller.receive_stock(movement_data, self.items_to_move)
+                m_id, low_items = self.controller.receive_stock(movement_data, self.items_to_move)
             else:
                 if not Validator.is_not_empty(self.issuing_entity.text()) or \
                    not Validator.is_not_empty(self.receiver_name.text()):
@@ -316,10 +317,13 @@ class StockOperationsView(QWidget):
                 movement_data["issuing_entity"] = self.issuing_entity.text()
                 movement_data["receiver_name"] = self.receiver_name.text()
                 movement_data["reason"] = self.reason_input.text()
-                self.controller.issue_stock(movement_data, self.items_to_move)
+                m_id, low_items = self.controller.issue_stock(movement_data, self.items_to_move)
 
             msg = f"تمت العملية بنجاح. رقم الفاتورة: {ref_no}\nتم حفظ نسخة PDF في مجلد reports."
             QMessageBox.information(self, "نجاح", msg)
+
+            for item in low_items:
+                NotificationManager.error(self.window(), f"تنبيه: الصنف '{item}' وصل للحد الحرج!")
             self.reset_form()
             self.data_changed.emit()
             self.load_history()

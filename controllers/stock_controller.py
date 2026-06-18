@@ -49,7 +49,7 @@ class StockController:
         self.audit_log.log(user['id'] if user else None, "Stock In", "movements", movement_id)
 
         self.generate_movement_pdf(movement_id)
-        return movement_id
+        return movement_id, [] # No low stock warning for receiving
 
     def issue_stock(self, movement_data, items_list):
         if 'date' not in movement_data:
@@ -71,7 +71,17 @@ class StockController:
         self.audit_log.log(user['id'] if user else None, "Stock Out", "movements", movement_id)
 
         self.generate_movement_pdf(movement_id)
-        return movement_id
+
+        # Check for low stock after issuing
+        low_items = []
+        from models.item import Item
+        item_model = Item()
+        for i_data in items_list:
+            item = item_model.get_by_id(i_data['item_id'])
+            if item['current_stock'] <= item['min_stock']:
+                low_items.append(item['name'])
+
+        return movement_id, low_items
 
     def generate_movement_pdf(self, movement_id):
         movement = self.movement_model.get_by_id(movement_id)
