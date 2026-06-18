@@ -1,4 +1,4 @@
-/* Professional Arabic WMS Theme - High Contrast & Pro Styling */
+/* Professional Arabic WMS Theme - High Contrast & Pro Styling V2 */
 
 QMainWindow {
     background-color: #f5f6fa;
@@ -12,7 +12,6 @@ QWidget {
 #Sidebar {
     background-color: #1a2a6c;
     min-width: 250px;
-    max-width: 250px;
 }
 
 #Sidebar QPushButton {
@@ -72,61 +71,81 @@ QWidget {
 /* Buttons - PRO HIGH CONTRAST */
 QPushButton {
     border-radius: 6px;
-    padding: 10px 20px;
+    padding: 12px 25px;
     font-weight: bold;
     font-size: 13px;
+    border: none;
 }
 
 QPushButton#PrimaryButton {
     background-color: #1a2a6c;
     color: #ffffff;
+    border-bottom: 3px solid #0d1a4d;
 }
 
 QPushButton#PrimaryButton:hover {
     background-color: #2a3a7c;
 }
 
+QPushButton#PrimaryButton:pressed {
+    border-bottom: none;
+    margin-top: 2px;
+}
+
 QPushButton#GoldButton {
     background-color: #d4af37;
     color: #1a2a6c;
+    border-bottom: 3px solid #b8860b;
 }
 
 QPushButton#GoldButton:hover {
     background-color: #c5a028;
 }
 
+QPushButton#GoldButton:pressed {
+    border-bottom: none;
+    margin-top: 2px;
+}
+
 /* Default buttons should not be invisible */
 QPushButton:!objectName {
     background-color: #ffffff;
     color: #1a2a6c;
-    border: 1px solid #1a2a6c;
+    border: 2px solid #1a2a6c;
 }
 
 QPushButton:hover:!objectName {
     background-color: #f1f2f6;
 }
 
-/* Inputs - High Contrast */
+/* Inputs - High Contrast & RTL Fixes */
 QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QDateEdit {
     background-color: #ffffff;
-    border: 1px solid #1a2a6c; /* Darker border for visibility */
+    border: 1px solid #1a2a6c;
     border-radius: 6px;
-    padding: 8px;
+    padding: 10px;
     color: #1a2a6c;
-    font-size: 14px;
+    font-size: 15px;
+    min-height: 20px;
 }
 
-QLineEdit:focus {
+QLineEdit:focus, QSpinBox:focus {
     border: 2px solid #d4af37;
+}
+
+/* SpinBox Padding Fix for RTL - prevents text overlap with arrows */
+QSpinBox, QDoubleSpinBox {
+    padding-left: 25px; /* Extra space for the value */
+    padding-right: 5px;
 }
 
 QComboBox {
     background-color: #ffffff;
     border: 1px solid #1a2a6c;
     border-radius: 6px;
-    padding: 8px;
+    padding: 10px;
     color: #1a2a6c;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 /* Tables */
@@ -135,12 +154,13 @@ QTableWidget {
     gridline-color: #f1f2f6;
     border: 1px solid #dcdde1;
     color: #1a2a6c;
+    font-size: 14px;
 }
 
 QHeaderView::section {
     background-color: #1a2a6c;
     color: #ffffff;
-    padding: 10px;
+    padding: 12px;
     font-weight: bold;
     border: none;
 }
@@ -148,29 +168,32 @@ QHeaderView::section {
 /* Progress Bars */
 QProgressBar {
     border: 1px solid #dcdde1;
-    border-radius: 5px;
+    border-radius: 8px;
     text-align: center;
     background-color: #f1f2f6;
     color: #1a2a6c;
     font-weight: bold;
+    height: 15px;
 }
 
 QProgressBar::chunk {
     background-color: #1a2a6c;
-    border-radius: 5px;
+    border-radius: 8px;
 }
 
-/* Summary Labels */
+/* Financial Summary Panel */
 #SummaryPanel {
     background-color: #ffffff;
-    border: 2px solid #1a2a6c;
-    border-radius: 8px;
+    border: 3px solid #1a2a6c;
+    border-radius: 12px;
+    padding: 15px;
 }
 
 #TotalLabel {
     background-color: #1a2a6c;
     color: #d4af37;
-    font-size: 22px;
+    font-size: 24px;
     font-weight: bold;
-    padding: 15px;
+    padding: 20px;
+    border-radius: 8px;
 }

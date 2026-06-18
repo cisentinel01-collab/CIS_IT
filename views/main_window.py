@@ -96,6 +96,14 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(content_container)
 
+    def animate_page_switch(self, widget):
+        from PySide6.QtCore import QPropertyAnimation, QPoint, QEasingCurve
+        self.stack.addWidget(widget)
+        self.stack.setCurrentWidget(widget)
+
+        # Simple fade or slide could be added here
+        # For now, we ensure clean loading
+
     def create_nav_button(self, id, text, icon_name):
         if not AuthManager.has_permission(id):
             return
@@ -136,8 +144,7 @@ class MainWindow(QMainWindow):
         elif page_id == "locations":
             view = LocationsView()
 
-        self.stack.addWidget(view)
-        self.stack.setCurrentWidget(view)
+        self.animate_page_switch(view)
 
     def load_dashboard(self):
         if "dashboard" in self.nav_buttons:

@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
-from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QRect, QEasingCurve
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGraphicsDropShadowEffect
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QRect, QEasingCurve, QPoint
 import qtawesome as qta
 
 class Notification(QWidget):
@@ -9,13 +9,15 @@ class Notification(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(10, 10, 10, 10)
+
         self.frame = QWidget()
         self.frame.setObjectName("NotificationFrame")
         self.frame.setStyleSheet(f"""
             #NotificationFrame {{
-                background-color: white;
+                background-color: #ffffff;
                 border: 2px solid {color};
-                border-radius: 10px;
+                border-radius: 12px;
             }}
             QLabel {{
                 color: {color};
@@ -24,40 +26,53 @@ class Notification(QWidget):
             }}
         """)
 
+        # Shadow effect for "Pro" look
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(15)
+        shadow.setColor(Qt.black)
+        shadow.setOffset(0, 5)
+        self.frame.setGraphicsEffect(shadow)
+
         frame_layout = QHBoxLayout(self.frame)
+        frame_layout.setContentsMargins(15, 15, 15, 15)
+        frame_layout.setSpacing(10)
 
         icon_label = QLabel()
-        icon_label.setPixmap(qta.icon(icon, color=color).pixmap(24, 24))
+        icon_label.setPixmap(qta.icon(icon, color=color).pixmap(28, 28))
         frame_layout.addWidget(icon_label)
 
         msg_label = QLabel(message)
+        msg_label.setWordWrap(True)
         frame_layout.addWidget(msg_label)
 
         self.layout.addWidget(self.frame)
 
-        # Position and Animation
         self.adjustSize()
-        if parent:
-            self.start_pos = QRect(parent.width() - self.width() - 20, -100, self.width(), self.height())
-            self.end_pos = QRect(parent.width() - self.width() - 20, 20, self.width(), self.height())
-        else:
-            self.start_pos = QRect(20, -100, self.width(), self.height())
-            self.end_pos = QRect(20, 20, self.width(), self.height())
 
-        self.setGeometry(self.start_pos)
-
-        self.anim = QPropertyAnimation(self, b"geometry")
-        self.anim.setDuration(500)
-        self.anim.setStartValue(self.start_pos)
-        self.anim.setEndValue(self.end_pos)
+        # Animation setup
+        self.anim = QPropertyAnimation(self, b"pos")
+        self.anim.setDuration(600)
         self.anim.setEasingCurve(QEasingCurve.OutBack)
 
         self.timer = QTimer()
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.hide_notification)
 
-    def show_notification(self, duration=3000):
+    def show_notification(self, duration=4000):
+        parent = self.parentWidget()
+        if parent:
+            start_x = parent.width() - self.width() - 30
+            self.start_pos = QPoint(start_x, -self.height())
+            self.end_pos = QPoint(start_x, 30)
+        else:
+            self.start_pos = QPoint(30, -self.height())
+            self.end_pos = QPoint(30, 30)
+
+        self.move(self.start_pos)
         self.show()
+
+        self.anim.setStartValue(self.start_pos)
+        self.anim.setEndValue(self.end_pos)
         self.anim.start()
         self.timer.start(duration)
 

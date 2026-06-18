@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                             QLabel, QFrame, QTableWidget, QTableWidgetItem, QHeaderView, QProgressBar)
+                             QLabel, QFrame, QTableWidget, QTableWidgetItem, QHeaderView, QProgressBar, QScrollArea)
 from PySide6.QtCore import Qt
 import qtawesome as qta
 
@@ -10,38 +10,58 @@ class DashboardView(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
-        main_layout = QVBoxLayout(self)
+        main_vbox = QVBoxLayout(self)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        content_widget = QWidget()
+        main_layout = QVBoxLayout(content_widget)
         main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(20)
+        main_layout.setSpacing(25)
 
         stats = self.controller.get_dashboard_stats()
 
-        # 1. KPI Cards Row
+        # 1. Main KPI Row
         cards_layout = QGridLayout()
         cards_layout.setSpacing(20)
 
         self.add_card(cards_layout, "إجمالي الأصناف", str(stats['total_items']), "fa5s.boxes", "#1a2a6c", 0, 0)
-        self.add_card(cards_layout, "الكمية الإجمالية", str(stats['total_qty']), "fa5s.cubes", "#27ae60", 0, 1)
+        self.add_card(cards_layout, "قيمة المخزن الإجمالية", f"{stats['total_value']:,.2f}", "fa5s.money-bill-wave", "#27ae60", 0, 1)
         self.add_card(cards_layout, "أصناف منخفضة", str(stats['low_stock']), "fa5s.exclamation-triangle", "#e74c3c", 0, 2)
         self.add_card(cards_layout, "عدد الموردين", str(stats['suppliers_count']), "fa5s.truck", "#f39c12", 0, 3)
 
         main_layout.addLayout(cards_layout)
 
-        # 2. Middle Row: Charts/Progress & Recent Activity
-        middle_layout = QHBoxLayout()
-        middle_layout.setSpacing(20)
+        # 2. Financial Summary Row
+        fin_layout = QHBoxLayout()
+        fin_layout.setSpacing(20)
+        self.add_stat_box(fin_layout, "إجمالي الوارد (قيمة المشتريات)", f"{stats['total_in']:,.2f}", "#2ecc71", "fa5s.arrow-down")
+        self.add_stat_box(fin_layout, "إجمالي الصادر (قيمة المنصرف)", f"{stats['total_out']:,.2f}", "#3498db", "fa5s.arrow-up")
+        main_layout.addLayout(fin_layout)
 
-        # Left: Stock Status (Progress bars)
+        # 3. Performance Row
+        perf_layout = QHBoxLayout()
+        perf_layout.setSpacing(20)
+        self.add_info_card(perf_layout, "المنتج الأكثر سحباً", stats['top_item'], "fa5s.fire", "#e67e22")
+        self.add_info_card(perf_layout, "المورد الأكثر تعاملاً", stats['top_supplier'], "fa5s.handshake", "#9b59b6")
+        main_layout.addLayout(perf_layout)
+
+        # 4. Detailed Sections
+        details_layout = QHBoxLayout()
+        details_layout.setSpacing(20)
+
+        # Stock Alerts
         stock_status_frame = QFrame()
         stock_status_frame.setObjectName("Card")
         ss_layout = QVBoxLayout(stock_status_frame)
-        ss_title = QLabel("تنبيهات المخزون")
+        ss_title = QLabel("تنبيهات المخزون الحرجة")
         ss_title.setObjectName("CardTitle")
         ss_layout.addWidget(ss_title)
 
-        low_items = stats['stock_status'][:5] # Show top 5 low stock items
+        low_items = stats['stock_status'][:8]
         if not low_items:
-            ss_layout.addWidget(QLabel("المخزون مستقر"))
+            ss_layout.addWidget(QLabel("لا توجد نواقص حالياً"))
         else:
             for item in low_items:
                 i_layout = QHBoxLayout()
@@ -53,15 +73,14 @@ class DashboardView(QWidget):
                 progress.setStyleSheet("QProgressBar::chunk { background-color: #e74c3c; }")
                 i_layout.addWidget(progress)
                 ss_layout.addLayout(i_layout)
-
         ss_layout.addStretch()
-        middle_layout.addWidget(stock_status_frame, 1)
+        details_layout.addWidget(stock_status_frame, 1)
 
-        # Right: Recent Activity Table
+        # Recent Activity
         activity_frame = QFrame()
         activity_frame.setObjectName("Card")
         act_layout = QVBoxLayout(activity_frame)
-        act_title = QLabel("آخر العمليات")
+        act_title = QLabel("سجل النشاط الأخير")
         act_title.setObjectName("CardTitle")
         act_layout.addWidget(act_title)
 
@@ -69,21 +88,26 @@ class DashboardView(QWidget):
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["الوقت", "المستخدم", "العملية"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setSelectionMode(QTableWidget.NoSelection)
         self.table.verticalHeader().setVisible(False)
-        self.table.setStyleSheet("border: none;")
+        self.table.setStyleSheet("border: none; background: transparent;")
 
         logs = self.controller.get_recent_activities()
         self.table.setRowCount(len(logs))
         for row, log in enumerate(logs):
-            self.table.setItem(row, 0, QTableWidgetItem(log['timestamp'].split()[1] if ' ' in log['timestamp'] else log['timestamp']))
+            time_str = log['timestamp'].split()[1] if ' ' in log['timestamp'] else log['timestamp']
+            self.table.setItem(row, 0, QTableWidgetItem(time_str))
             self.table.setItem(row, 1, QTableWidgetItem(log['user_name'] or "النظام"))
             self.table.setItem(row, 2, QTableWidgetItem(log['action']))
 
         act_layout.addWidget(self.table)
-        middle_layout.addWidget(activity_frame, 2)
+        details_layout.addWidget(activity_frame, 2)
 
-        main_layout.addLayout(middle_layout)
-        main_layout.addStretch()
+        main_layout.addLayout(details_layout)
+
+        scroll.setWidget(content_widget)
+        main_vbox.addWidget(scroll)
 
     def add_card(self, layout, title, value, icon, color, r, c):
         card = QFrame()
@@ -91,7 +115,7 @@ class DashboardView(QWidget):
         card_layout = QHBoxLayout(card)
 
         icon_label = QLabel()
-        icon_label.setPixmap(qta.icon(icon, color=color).pixmap(40, 40))
+        icon_label.setPixmap(qta.icon(icon, color=color).pixmap(45, 45))
         card_layout.addWidget(icon_label)
 
         text_layout = QVBoxLayout()
@@ -104,5 +128,45 @@ class DashboardView(QWidget):
         text_layout.addWidget(t_label)
         text_layout.addWidget(v_label)
         card_layout.addLayout(text_layout)
-
         layout.addWidget(card, r, c)
+
+    def add_stat_box(self, layout, title, value, color, icon):
+        box = QFrame()
+        box.setObjectName("Card")
+        box.setStyleSheet(f"border-right: 5px solid {color};")
+        l = QVBoxLayout(box)
+        t = QLabel(title)
+        t.setObjectName("CardTitle")
+        v = QHBoxLayout()
+        v_val = QLabel(value)
+        v_val.setStyleSheet(f"font-size: 22px; font-weight: bold; color: {color};")
+        v_icon = QLabel()
+        v_icon.setPixmap(qta.icon(icon, color=color).pixmap(24, 24))
+        v.addWidget(v_val)
+        v.addStretch()
+        v.addWidget(v_icon)
+        l.addWidget(t)
+        l.addLayout(v)
+        layout.addWidget(box)
+
+    def add_info_card(self, layout, title, value, icon, color):
+        card = QFrame()
+        card.setObjectName("Card")
+        l = QVBoxLayout(card)
+
+        header = QHBoxLayout()
+        h_icon = QLabel()
+        h_icon.setPixmap(qta.icon(icon, color=color).pixmap(20, 20))
+        h_title = QLabel(title)
+        h_title.setStyleSheet("font-size: 13px; color: #7f8c8d; font-weight: bold;")
+        header.addWidget(h_icon)
+        header.addWidget(h_title)
+        header.addStretch()
+
+        v_label = QLabel(value)
+        v_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {color}; margin-top: 5px;")
+        v_label.setWordWrap(True)
+
+        l.addLayout(header)
+        l.addWidget(v_label)
+        layout.addWidget(card)

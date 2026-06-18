@@ -167,7 +167,11 @@ class ItemDialog(QDialog):
         layout.addRow("الفئة:", self.category_input)
         layout.addRow("الوحدة:", self.unit_input)
         layout.addRow("موقع التخزين:", self.location_combo)
-        layout.addRow("الحد الأدنى:", self.min_stock_input)
+
+        min_stock_layout = QHBoxLayout()
+        min_stock_layout.addWidget(self.min_stock_input)
+        min_stock_layout.addStretch()
+        layout.addRow("الحد الأدنى:", min_stock_layout)
 
         btns = QHBoxLayout()
         save_btn = QPushButton("حفظ")

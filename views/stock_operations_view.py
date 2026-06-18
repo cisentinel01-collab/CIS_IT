@@ -125,10 +125,16 @@ class StockOperationsView(QWidget):
         # Financials
         fin_group = QGroupBox("الإجماليات والخصومات")
         fin_layout = QFormLayout(fin_group)
+
+        disc_box = QHBoxLayout()
         self.discount_input = QSpinBox()
         self.discount_input.setSuffix("%")
+        self.discount_input.setMinimumWidth(100)
         self.discount_input.valueChanged.connect(self.update_summary)
-        fin_layout.addRow("نسبة الخصم:", self.discount_input)
+        disc_box.addWidget(self.discount_input)
+        disc_box.addStretch()
+
+        fin_layout.addRow("نسبة الخصم:", disc_box)
 
         self.summary_label = QLabel("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
         self.summary_label.setObjectName("GoldSummaryLabel")
