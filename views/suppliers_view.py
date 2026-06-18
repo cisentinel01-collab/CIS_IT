@@ -54,9 +54,30 @@ class SuppliersView(QWidget):
             self.table.setItem(row, 3, QTableWidgetItem(str(s['address'] or "")))
             self.table.setItem(row, 4, QTableWidgetItem(str(s['notes'] or "")))
 
+            btns_widget = QWidget()
+            btns_layout = QHBoxLayout(btns_widget)
+            btns_layout.setContentsMargins(2, 2, 2, 2)
+
             edit_btn = QPushButton("تعديل")
             edit_btn.clicked.connect(lambda _, supplier=s: self.show_edit_dialog(supplier))
-            self.table.setCellWidget(row, 5, edit_btn)
+
+            delete_btn = QPushButton("حذف")
+            delete_btn.setStyleSheet("background-color: #e74c3c; color: white;")
+            delete_btn.clicked.connect(lambda _, supplier=s: self.handle_delete(supplier))
+
+            btns_layout.addWidget(edit_btn)
+            btns_layout.addWidget(delete_btn)
+            self.table.setCellWidget(row, 5, btns_widget)
+
+    def handle_delete(self, s):
+        from utils.auth import AuthManager
+        if not AuthManager.has_permission('suppliers', 'delete'):
+            QMessageBox.warning(self, "تنبيه", "لا تملك صلاحية الحذف")
+            return
+
+        if QMessageBox.question(self, "تأكيد", f"حذف المورد '{s['name']}'؟") == QMessageBox.Yes:
+            self.controller.model.update(s['id'], {"is_deleted": 1})
+            self.refresh()
 
     def handle_search(self):
         term = self.search_input.text()

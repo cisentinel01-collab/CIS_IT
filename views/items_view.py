@@ -69,10 +69,32 @@ class ItemsView(QWidget):
             self.table.setItem(row, 5, QTableWidgetItem(str(item['current_stock'])))
             self.table.setItem(row, 6, QTableWidgetItem(str(item['min_stock'])))
 
+            btns_widget = QWidget()
+            btns_layout = QHBoxLayout(btns_widget)
+            btns_layout.setContentsMargins(2, 2, 2, 2)
+
             edit_btn = QPushButton("تعديل")
             edit_btn.setStyleSheet("background-color: #f39c12; color: white; border-radius: 5px; font-weight: bold;")
             edit_btn.clicked.connect(lambda _, i=item: self.show_edit_dialog(i))
-            self.table.setCellWidget(row, 7, edit_btn)
+
+            delete_btn = QPushButton("حذف")
+            delete_btn.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 5px; font-weight: bold;")
+            delete_btn.clicked.connect(lambda _, i=item: self.handle_delete(i))
+
+            btns_layout.addWidget(edit_btn)
+            btns_layout.addWidget(delete_btn)
+            self.table.setCellWidget(row, 7, btns_widget)
+
+    def handle_delete(self, item):
+        from utils.auth import AuthManager
+        if not AuthManager.has_permission('items', 'delete'):
+            QMessageBox.warning(self, "تنبيه", "لا تملك صلاحية الحذف")
+            return
+
+        if QMessageBox.question(self, "تأكيد", f"هل أنت متأكد من حذف '{item['name']}'؟") == QMessageBox.Yes:
+            self.controller.delete_item(item['id'])
+            self.refresh()
+            self.data_changed.emit()
 
     def handle_search(self):
         term = self.search_input.text()

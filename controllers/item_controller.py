@@ -24,3 +24,6 @@ class ItemController:
 
     def search_items(self, term):
         return self.model.search(term)
+
+    def delete_item(self, i_id):
+        self.model.update(i_id, {"is_deleted": 1})

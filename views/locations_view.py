@@ -32,8 +32,8 @@ class LocationsView(QWidget):
 
         # Table
         self.table = QTableWidget()
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["المعرف", "اسم الموقع", "الوصف"])
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["المعرف", "اسم الموقع", "الوصف", "إجراءات"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
 
@@ -53,6 +53,16 @@ class LocationsView(QWidget):
             self.table.setItem(row, 0, QTableWidgetItem(str(loc['id'])))
             self.table.setItem(row, 1, QTableWidgetItem(loc['name']))
             self.table.setItem(row, 2, QTableWidgetItem(loc['description'] or ""))
+
+            del_btn = QPushButton("حذف")
+            del_btn.setStyleSheet("background-color: #e74c3c; color: white;")
+            del_btn.clicked.connect(lambda _, l=loc: self.handle_delete(l))
+            self.table.setCellWidget(row, 3, del_btn)
+
+    def handle_delete(self, loc):
+        if QMessageBox.question(self, "تأكيد", f"حذف الموقع '{loc['name']}'؟") == QMessageBox.Yes:
+            self.model.update(loc['id'], {"is_deleted": 1})
+            self.refresh()
 
     def show_add_dialog(self):
         from PySide6.QtWidgets import QDialog, QFormLayout

@@ -105,15 +105,15 @@ class StockOperationsView(QWidget):
         qty_box.addWidget(self.qty_input)
         selector_layout.addLayout(qty_box)
 
-        if self.op_type == "IN":
-            price_box = QHBoxLayout()
-            price_box.setSpacing(5)
-            self.price_input = QLineEdit()
-            self.price_input.setPlaceholderText("السعر")
-            self.price_input.setMinimumWidth(80)
-            price_box.addWidget(QLabel("السعر:"))
-            price_box.addWidget(self.price_input)
-            selector_layout.addLayout(price_box)
+        # Price is now supported in both IN and OUT
+        price_box = QHBoxLayout()
+        price_box.setSpacing(5)
+        self.price_input = QLineEdit()
+        self.price_input.setPlaceholderText("السعر")
+        self.price_input.setMinimumWidth(80)
+        price_box.addWidget(QLabel("السعر:"))
+        price_box.addWidget(self.price_input)
+        selector_layout.addLayout(price_box)
 
         add_item_btn = QPushButton("إضافة")
         add_item_btn.setObjectName("GoldButton")
@@ -143,9 +143,8 @@ class StockOperationsView(QWidget):
 
         # Selected Items Table
         self.table = QTableWidget()
-        self.table.setColumnCount(4 if self.op_type == "IN" else 3)
-        headers = ["الكود", "الاسم", "الكمية"]
-        if self.op_type == "IN": headers.append("السعر")
+        self.table.setColumnCount(4)
+        headers = ["الكود", "الاسم", "الكمية", "السعر"]
         self.table.setHorizontalHeaderLabels(headers)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
@@ -252,25 +251,22 @@ class StockOperationsView(QWidget):
                                   f"الكمية المطلوبة ({qty}) أكبر من المخزون المتاح ({current_item['current_stock']})")
                 return
 
-        price = 0
-        if self.op_type == "IN":
-            try:
-                price_text = self.price_input.text()
-                if not price_text:
-                    QMessageBox.warning(self, "تنبيه", "يرجى إدخال السعر")
-                    return
-                price = float(price_text)
-            except ValueError:
-                QMessageBox.warning(self, "خطأ", "السعر يجب أن يكون رقماً")
+        try:
+            price_text = self.price_input.text()
+            if not price_text:
+                QMessageBox.warning(self, "تنبيه", "يرجى إدخال السعر")
                 return
+            price = float(price_text)
+        except ValueError:
+            QMessageBox.warning(self, "خطأ", "السعر يجب أن يكون رقماً")
+            return
 
         row = self.table.rowCount()
         self.table.insertRow(row)
         self.table.setItem(row, 0, QTableWidgetItem(item_data['code']))
         self.table.setItem(row, 1, QTableWidgetItem(item_data['name']))
         self.table.setItem(row, 2, QTableWidgetItem(str(qty)))
-        if self.op_type == "IN":
-            self.table.setItem(row, 3, QTableWidgetItem(str(price)))
+        self.table.setItem(row, 3, QTableWidgetItem(str(price)))
 
         self.items_to_move.append({
             "item_id": item_data['id'],
