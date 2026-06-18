@@ -32,7 +32,8 @@ class PDFGenerator:
                     'support_zwj': True,
                     'unreshape_quotes': True,
                     'use_expanded_forms': True,
-                    'reshape_digits': True, # Important for proper Arabic/Indic digits
+                    'reshape_digits': True,
+                    'use_unshaped_instead_of_isolated': True
                 }
             )
         except ImportError:
