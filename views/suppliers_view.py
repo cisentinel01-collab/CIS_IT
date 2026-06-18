@@ -33,7 +33,9 @@ class SuppliersView(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels(["الاسم", "الهاتف", "البريد", "العنوان", "ملاحظات", "إجراءات"])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Name stretches
+        self.table.horizontalHeader().setDefaultSectionSize(130)
         layout.addWidget(self.table)
 
         self.refresh()
@@ -46,11 +48,11 @@ class SuppliersView(QWidget):
         for s in suppliers:
             row = self.table.rowCount()
             self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(s['name']))
-            self.table.setItem(row, 1, QTableWidgetItem(s['phone'] or ""))
-            self.table.setItem(row, 2, QTableWidgetItem(s['email'] or ""))
-            self.table.setItem(row, 3, QTableWidgetItem(s['address'] or ""))
-            self.table.setItem(row, 4, QTableWidgetItem(s['notes'] or ""))
+            self.table.setItem(row, 0, QTableWidgetItem(str(s['name'])))
+            self.table.setItem(row, 1, QTableWidgetItem(str(s['phone'] or "")))
+            self.table.setItem(row, 2, QTableWidgetItem(str(s['email'] or "")))
+            self.table.setItem(row, 3, QTableWidgetItem(str(s['address'] or "")))
+            self.table.setItem(row, 4, QTableWidgetItem(str(s['notes'] or "")))
 
             edit_btn = QPushButton("تعديل")
             edit_btn.clicked.connect(lambda _, supplier=s: self.show_edit_dialog(supplier))

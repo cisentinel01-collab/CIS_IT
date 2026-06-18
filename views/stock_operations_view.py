@@ -164,7 +164,9 @@ class StockOperationsView(QWidget):
         self.history_table = QTableWidget()
         self.history_table.setColumnCount(5)
         self.history_table.setHorizontalHeaderLabels(["التاريخ", "رقم الفاتورة", "المورد/المستلم", "الإجمالي", "إجراءات"])
-        self.history_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.history_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.history_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.history_table.horizontalHeader().setDefaultSectionSize(140)
         self.history_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.history_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.history_table.doubleClicked.connect(self.handle_history_double_click)
@@ -193,11 +195,12 @@ class StockOperationsView(QWidget):
             self.history_table.setCellWidget(row, 4, view_pdf_btn)
 
     def handle_history_double_click(self, index):
-        # We need the movement_id. Since it's not in the table, we'll fetch from controller
-        # or use the row index to get it from current history list.
+        # Double check we have the row index correctly
+        row = index.row()
         history = self.controller.get_movement_history(type=self.op_type)
-        if index.row() < len(history):
-            self.view_movement_pdf(history[index.row()]['id'])
+        if row < len(history):
+            m_id = history[row]['id']
+            self.view_movement_pdf(m_id)
 
     def view_movement_pdf(self, movement_id):
         path = self.controller.generate_movement_pdf(movement_id)

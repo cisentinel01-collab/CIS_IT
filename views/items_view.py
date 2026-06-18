@@ -44,7 +44,9 @@ class ItemsView(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setColumnCount(8)
         self.table.setHorizontalHeaderLabels(["الكود", "الاسم", "الفئة", "الوحدة", "الموقع", "الكمية", "الحد الأدنى", "إجراءات"])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch) # Name stretches
+        self.table.horizontalHeader().setDefaultSectionSize(120)
         layout.addWidget(self.table)
 
         self.refresh()
@@ -57,6 +59,8 @@ class ItemsView(QWidget):
         for item in items:
             row = self.table.rowCount()
             self.table.insertRow(row)
+
+            # Ensure items are readable by creating QTableWidgetItem explicitly
             self.table.setItem(row, 0, QTableWidgetItem(str(item['code'])))
             self.table.setItem(row, 1, QTableWidgetItem(str(item['name'])))
             self.table.setItem(row, 2, QTableWidgetItem(str(item['category'] or "")))

@@ -1,4 +1,4 @@
-/* Professional Arabic WMS Theme - High Contrast & Pro Styling V2 */
+/* Professional Arabic WMS Theme - High Contrast & Pro Styling V3 */
 
 QMainWindow {
     background-color: #f5f6fa;
@@ -6,6 +6,7 @@ QMainWindow {
 
 QWidget {
     font-family: 'Cairo', 'Segoe UI', Tahoma;
+    color: #1a2a6c; /* Default text color is Dark Navy for visibility */
 }
 
 /* Sidebar Navigation */
@@ -40,7 +41,7 @@ QWidget {
 #Header {
     background-color: #ffffff;
     min-height: 65px;
-    border-bottom: 2px solid #1a2a6c;
+    border-bottom: 3px solid #1a2a6c;
 }
 
 #Header QLabel {
@@ -54,18 +55,19 @@ QWidget {
     background-color: #ffffff;
     border-radius: 12px;
     padding: 20px;
-    border: 1px solid #dcdde1;
+    border: 2px solid #dcdde1; /* Thicker border */
 }
 
 #CardTitle {
-    color: #7f8c8d;
-    font-size: 14px;
+    color: #2c3e50;
+    font-size: 15px;
     font-weight: bold;
 }
 
 #CardValue {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: bold;
+    color: #1a2a6c;
 }
 
 /* Buttons - PRO HIGH CONTRAST */
@@ -74,87 +76,62 @@ QPushButton {
     padding: 12px 25px;
     font-weight: bold;
     font-size: 13px;
-    border: none;
+    min-height: 20px;
 }
 
 QPushButton#PrimaryButton {
     background-color: #1a2a6c;
     color: #ffffff;
-    border-bottom: 3px solid #0d1a4d;
-}
-
-QPushButton#PrimaryButton:hover {
-    background-color: #2a3a7c;
-}
-
-QPushButton#PrimaryButton:pressed {
-    border-bottom: none;
-    margin-top: 2px;
+    border: 1px solid #1a2a6c;
 }
 
 QPushButton#GoldButton {
     background-color: #d4af37;
     color: #1a2a6c;
-    border-bottom: 3px solid #b8860b;
+    border: 1px solid #b8860b;
 }
 
-QPushButton#GoldButton:hover {
-    background-color: #c5a028;
-}
-
-QPushButton#GoldButton:pressed {
-    border-bottom: none;
-    margin-top: 2px;
-}
-
-/* Default buttons should not be invisible */
+/* Ensure default buttons are visible */
 QPushButton:!objectName {
     background-color: #ffffff;
     color: #1a2a6c;
     border: 2px solid #1a2a6c;
 }
 
-QPushButton:hover:!objectName {
-    background-color: #f1f2f6;
-}
-
-/* Inputs - High Contrast & RTL Fixes */
+/* Inputs - High Contrast */
 QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QDateEdit {
     background-color: #ffffff;
-    border: 1px solid #1a2a6c;
+    border: 2px solid #1a2a6c; /* High contrast border */
     border-radius: 6px;
     padding: 10px;
-    color: #1a2a6c;
+    color: #000000; /* Black text for maximum clarity */
     font-size: 15px;
-    min-height: 20px;
-}
-
-QLineEdit:focus, QSpinBox:focus {
-    border: 2px solid #d4af37;
-}
-
-/* SpinBox Padding Fix for RTL - prevents text overlap with arrows */
-QSpinBox, QDoubleSpinBox {
-    padding-left: 25px; /* Extra space for the value */
-    padding-right: 5px;
 }
 
 QComboBox {
     background-color: #ffffff;
-    border: 1px solid #1a2a6c;
+    border: 2px solid #1a2a6c;
     border-radius: 6px;
     padding: 10px;
-    color: #1a2a6c;
-    font-size: 15px;
+    color: #000000;
 }
 
-/* Tables */
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    color: #000000;
+    selection-background-color: #d4af37;
+    selection-color: #1a2a6c;
+}
+
+/* Tables - CRITICAL VISIBILITY */
 QTableWidget {
     background-color: #ffffff;
-    gridline-color: #f1f2f6;
-    border: 1px solid #dcdde1;
-    color: #1a2a6c;
+    gridline-color: #1a2a6c; /* Darker grid */
+    border: 2px solid #dcdde1;
+    color: #000000; /* Black text in tables */
     font-size: 14px;
+    selection-background-color: #d4af37;
+    selection-color: #1a2a6c;
 }
 
 QHeaderView::section {
@@ -162,38 +139,51 @@ QHeaderView::section {
     color: #ffffff;
     padding: 12px;
     font-weight: bold;
-    border: none;
+    border: 1px solid #ffffff;
+    font-size: 14px;
+}
+
+/* Tabs */
+QTabWidget::pane {
+    border: 2px solid #1a2a6c;
+    background-color: #ffffff;
+}
+
+QTabBar::tab {
+    background-color: #f1f2f6;
+    color: #1a2a6c; /* High contrast text for tabs */
+    padding: 15px 30px;
+    border: 1px solid #dcdde1;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+QTabBar::tab:selected {
+    background-color: #1a2a6c;
+    color: #ffffff;
 }
 
 /* Progress Bars */
 QProgressBar {
-    border: 1px solid #dcdde1;
+    border: 2px solid #1a2a6c;
     border-radius: 8px;
     text-align: center;
     background-color: #f1f2f6;
-    color: #1a2a6c;
+    color: #000000;
     font-weight: bold;
-    height: 15px;
 }
 
 QProgressBar::chunk {
-    background-color: #1a2a6c;
-    border-radius: 8px;
+    background-color: #d4af37; /* Gold chunk on navy border */
 }
 
-/* Financial Summary Panel */
-#SummaryPanel {
-    background-color: #ffffff;
-    border: 3px solid #1a2a6c;
-    border-radius: 12px;
-    padding: 15px;
-}
-
-#TotalLabel {
-    background-color: #1a2a6c;
-    color: #d4af37;
-    font-size: 24px;
+/* Summary Labels */
+#GoldSummaryLabel {
+    background-color: #d4af37;
+    color: #1a2a6c;
+    font-size: 20px;
     font-weight: bold;
     padding: 20px;
-    border-radius: 8px;
+    border: 2px solid #1a2a6c;
+    border-radius: 10px;
 }
