@@ -26,7 +26,7 @@ class AuthManager:
         role = cls._current_user['role']
 
         # 1. مسئول المخزن (Full Access)
-        if role == 'warehouse_manager':
+        if role in ['warehouse_manager', 'admin']:
             return True
 
         # 2. المتابعة (View/Report Only)

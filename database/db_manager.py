@@ -13,7 +13,7 @@ class DBManager:
 
     def _init_db(self):
         conn = sqlite3.connect(self.db_path)
-        with open("database/schema.sql", "r") as f:
+        with open("database/schema.sql", "r", encoding="utf-8") as f:
             conn.executescript(f.read())
         conn.commit()
         conn.close()
