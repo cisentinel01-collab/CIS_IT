@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QComboBox, QMessageBox)
 from PySide6.QtCore import Qt
+import qtawesome as qta
 from models.location import Location
 
 class LocationsView(QWidget):
@@ -12,45 +13,71 @@ class LocationsView(QWidget):
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
 
+        # Toolbar
         toolbar = QHBoxLayout()
-        self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("اسم الموقع الجديد (مثلاً: رف A1)")
-        toolbar.addWidget(self.name_input)
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("بحث عن موقع...")
+        self.search_input.textChanged.connect(self.refresh)
+        toolbar.addWidget(self.search_input)
 
-        add_btn = QPushButton("إضافة موقع")
-        add_btn.clicked.connect(self.handle_add)
+        add_btn = QPushButton("إضافة موقع جديد")
+        add_btn.setObjectName("PrimaryButton")
+        add_btn.setIcon(qta.icon("fa5s.plus", color="white"))
+        add_btn.clicked.connect(self.show_add_dialog)
         toolbar.addWidget(add_btn)
+
         layout.addLayout(toolbar)
 
+        # Table
         self.table = QTableWidget()
         self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["ID", "الاسم", "إجراءات"])
+        self.table.setHorizontalHeaderLabels(["المعرف", "اسم الموقع", "الوصف"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
+
         self.refresh()
 
     def refresh(self):
-        locs = self.model.get_all()
+        term = self.search_input.text()
+        if term:
+            locations = self.model.execute_query("SELECT * FROM locations WHERE name LIKE ? AND is_deleted = 0", (f"%{term}%",))
+        else:
+            locations = self.model.get_all()
+
         self.table.setRowCount(0)
-        for l in locs:
+        for loc in locations:
             row = self.table.rowCount()
             self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(str(l['id'])))
-            self.table.setItem(row, 1, QTableWidgetItem(l['name']))
+            self.table.setItem(row, 0, QTableWidgetItem(str(loc['id'])))
+            self.table.setItem(row, 1, QTableWidgetItem(loc['name']))
+            self.table.setItem(row, 2, QTableWidgetItem(loc['description'] or ""))
 
-            del_btn = QPushButton("حذف")
-            del_btn.clicked.connect(lambda _, id=l['id']: self.handle_delete(id))
-            self.table.setCellWidget(row, 2, del_btn)
+    def show_add_dialog(self):
+        from PySide6.QtWidgets import QDialog, QFormLayout
+        dialog = QDialog(self)
+        dialog.setWindowTitle("إضافة موقع جديد")
+        d_layout = QFormLayout(dialog)
 
-    def handle_add(self):
-        name = self.name_input.text()
-        if name:
-            self.model.create({"name": name})
-            self.name_input.clear()
-            self.refresh()
+        name_input = QLineEdit()
+        desc_input = QLineEdit()
 
-    def handle_delete(self, id):
-        if QMessageBox.question(self, "تأكيد", "هل أنت متأكد؟") == QMessageBox.Yes:
-            self.model.soft_delete(id)
-            self.refresh()
+        d_layout.addRow("اسم الموقع:", name_input)
+        d_layout.addRow("الوصف:", desc_input)
+
+        save_btn = QPushButton("حفظ")
+        save_btn.setObjectName("GoldButton")
+        save_btn.clicked.connect(lambda: self.save_location(dialog, name_input.text(), desc_input.text()))
+        d_layout.addRow(save_btn)
+
+        dialog.exec()
+
+    def save_location(self, dialog, name, desc):
+        if not name:
+            QMessageBox.warning(self, "تنبيه", "الاسم مطلوب")
+            return
+
+        self.model.create({"name": name, "description": desc})
+        dialog.accept()
+        self.refresh()

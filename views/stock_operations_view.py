@@ -81,10 +81,11 @@ class StockOperationsView(QWidget):
 
         self.item_combo = QComboBox()
         self.item_combo.setEditable(True)
+        self.item_combo.setMinimumWidth(300)
         self.item_combo.setPlaceholderText("اختر صنف أو ابحث بالكود...")
         self.load_items()
         selector_layout.addWidget(QLabel("الصنف:"))
-        selector_layout.addWidget(self.item_combo, 2)
+        selector_layout.addWidget(self.item_combo)
 
         scan_item_btn = QPushButton()
         scan_item_btn.setIcon(qta.icon("fa5s.qrcode", color="#1a2a6c"))
@@ -93,19 +94,28 @@ class StockOperationsView(QWidget):
         scan_item_btn.clicked.connect(self.handle_item_scan)
         selector_layout.addWidget(scan_item_btn)
 
+        # Horizontal layout for QSpinBox with label
+        qty_box = QHBoxLayout()
+        qty_box.setSpacing(5)
         self.qty_input = QSpinBox()
         self.qty_input.setMinimum(1)
         self.qty_input.setMaximum(1000000)
-        selector_layout.addWidget(QLabel("الكمية:"))
-        selector_layout.addWidget(self.qty_input)
+        self.qty_input.setMinimumWidth(80)
+        qty_box.addWidget(QLabel("الكمية:"))
+        qty_box.addWidget(self.qty_input)
+        selector_layout.addLayout(qty_box)
 
         if self.op_type == "IN":
+            price_box = QHBoxLayout()
+            price_box.setSpacing(5)
             self.price_input = QLineEdit()
             self.price_input.setPlaceholderText("السعر")
-            selector_layout.addWidget(QLabel("السعر:"))
-            selector_layout.addWidget(self.price_input)
+            self.price_input.setMinimumWidth(80)
+            price_box.addWidget(QLabel("السعر:"))
+            price_box.addWidget(self.price_input)
+            selector_layout.addLayout(price_box)
 
-        add_item_btn = QPushButton("إضافة للقائمة")
+        add_item_btn = QPushButton("إضافة")
         add_item_btn.setObjectName("GoldButton")
         add_item_btn.clicked.connect(self.add_item_to_list)
         selector_layout.addWidget(add_item_btn)
@@ -149,6 +159,9 @@ class StockOperationsView(QWidget):
         self.history_table.setColumnCount(5)
         self.history_table.setHorizontalHeaderLabels(["التاريخ", "رقم الفاتورة", "المورد/المستلم", "الإجمالي", "إجراءات"])
         self.history_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.history_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.history_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.history_table.doubleClicked.connect(self.handle_history_double_click)
         layout.addWidget(self.history_table)
 
         refresh_btn = QPushButton("تحديث السجل")
@@ -172,6 +185,13 @@ class StockOperationsView(QWidget):
             view_pdf_btn = QPushButton("عرض PDF")
             view_pdf_btn.clicked.connect(lambda _, m_id=h['id']: self.view_movement_pdf(m_id))
             self.history_table.setCellWidget(row, 4, view_pdf_btn)
+
+    def handle_history_double_click(self, index):
+        # We need the movement_id. Since it's not in the table, we'll fetch from controller
+        # or use the row index to get it from current history list.
+        history = self.controller.get_movement_history(type=self.op_type)
+        if index.row() < len(history):
+            self.view_movement_pdf(history[index.row()]['id'])
 
     def view_movement_pdf(self, movement_id):
         path = self.controller.generate_movement_pdf(movement_id)
