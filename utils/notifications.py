@@ -1,94 +1,46 @@
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QApplication
-from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QRect, QEasingCurve, QPoint
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QRect, QEasingCurve
 import qtawesome as qta
 
-class NotificationWidget(QWidget):
+class Notification(QWidget):
     def __init__(self, message, type="info", parent=None):
         super().__init__(parent)
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.SubWindow)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.ToolTip)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-        self.layout = QHBoxLayout(self)
-        self.bg_frame = QWidget()
-        self.bg_frame.setObjectName("NotificationFrame")
+        layout = QVBoxLayout(self)
+        self.frame = QWidget()
+        self.frame.setObjectName("Notification")
 
-        colors = {
-            "success": "#2ecc71",
-            "warning": "#f1c40f",
-            "error": "#e74c3c",
-            "info": "#3498db"
-        }
-        icons = {
-            "success": "fa5s.check-circle",
-            "warning": "fa5s.exclamation-triangle",
-            "error": "fa5s.times-circle",
-            "info": "fa5s.info-circle"
-        }
-
-        self.bg_frame.setStyleSheet(f"""
-            QWidget#NotificationFrame {{
-                background-color: {colors.get(type, "#3498db")};
+        bg_color = "#1a2a6c" if type == "info" else "#27ae60" if type == "success" else "#c0392b"
+        self.frame.setStyleSheet(f"""
+            QWidget#Notification {{
+                background-color: {bg_color};
                 border-radius: 10px;
-                color: white;
+                padding: 15px;
             }}
+            QLabel {{ color: white; font-weight: bold; font-size: 14px; }}
         """)
 
-        frame_layout = QHBoxLayout(self.bg_frame)
-
+        frame_layout = QHBoxLayout(self.frame)
+        icon = qta.icon("fa5s.info-circle" if type == "info" else "fa5s.check-circle", color="white")
         icon_label = QLabel()
-        icon_label.setPixmap(qta.icon(icons.get(type, "fa5s.info-circle"), color="white").pixmap(24, 24))
+        icon_label.setPixmap(icon.pixmap(24, 24))
         frame_layout.addWidget(icon_label)
 
-        msg_label = QLabel(message)
-        msg_label.setStyleSheet("color: white; font-weight: bold; font-size: 14px; border: none;")
-        frame_layout.addWidget(msg_label)
+        self.label = QLabel(message)
+        frame_layout.addWidget(self.label)
 
-        self.layout.addWidget(self.bg_frame)
+        layout.addWidget(self.frame)
 
-        # Position at top right
-        self.resize(300, 60)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.close)
+        self.timer.start(3000)
 
-    def show_animated(self):
-        screen = QApplication.primaryScreen().geometry()
-        start_pos = QPoint(screen.width(), 50)
-        end_pos = QPoint(screen.width() - 320, 50)
-
-        self.move(start_pos)
-        self.show()
-
-        self.anim = QPropertyAnimation(self, b"pos")
-        self.anim.setDuration(500)
-        self.anim.setStartValue(start_pos)
-        self.anim.setEndValue(end_pos)
-        self.anim.setEasingCurve(QEasingCurve.OutCubic)
-        self.anim.start()
-
-        QTimer.singleShot(3000, self.hide_animated)
-
-    def hide_animated(self):
-        screen = QApplication.primaryScreen().geometry()
-        end_pos = QPoint(screen.width(), 50)
-
-        self.anim = QPropertyAnimation(self, b"pos")
-        self.anim.setDuration(500)
-        self.anim.setStartValue(self.pos())
-        self.anim.setEndValue(end_pos)
-        self.anim.setEasingCurve(QEasingCurve.InCubic)
-        self.anim.finished.connect(self.close)
-        self.anim.start()
-
-class NotificationManager:
     @staticmethod
-    def show(message, type="info"):
-        # Sound effects would be played here if enabled in settings
-        # from utils.sound_player import SoundPlayer
-        # if settings.sounds_enabled: SoundPlayer.play(type)
-
-        notif = NotificationWidget(message, type)
-        notif.show_animated()
-        # We need to keep a reference or the widget might be garbage collected
-        if not hasattr(NotificationManager, '_notifications'):
-            NotificationManager._notifications = []
-        NotificationManager._notifications.append(notif)
-        notif.destroyed.connect(lambda: NotificationManager._notifications.remove(notif))
+    def show_message(message, type="info", parent=None):
+        notif = Notification(message, type, parent)
+        # Position at top-right
+        if parent:
+            notif.move(parent.width() - 350, 50)
+        notif.show()

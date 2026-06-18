@@ -1,35 +1,24 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QLabel, QScrollArea, QFrame)
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QLabel
 from PySide6.QtCore import Qt
-from PySide6.QtWebEngineWidgets import QWebEngineView # Not always available
-# Using a simpler approach: just show the PDF if we can, or a summary
+import os
 
 class PrintPreviewDialog(QDialog):
-    def __init__(self, file_path, parent=None):
+    def __init__(self, pdf_path, parent=None):
         super().__init__(parent)
         self.setWindowTitle("معاينة الطباعة")
-        self.resize(800, 900)
-        self.file_path = file_path
-        self.setup_ui()
+        self.resize(900, 800)
 
-    def setup_ui(self):
         layout = QVBoxLayout(self)
 
-        toolbar = QHBoxLayout()
-        print_btn = QPushButton("طباعة")
-        print_btn.setObjectName("PrimaryButton")
-        # In a real app, use QPrinter
-        toolbar.addWidget(print_btn)
-
-        save_btn = QPushButton("حفظ كـ PDF")
-        toolbar.addWidget(save_btn)
-
-        layout.addLayout(toolbar)
-
-        label = QLabel(f"تم إنشاء الملف بنجاح:\n{self.file_path}\n\n(في بيئة العرض هذه، يرجى فتح الملف يدوياً للمعاينة الكاملة)")
+        # In a real app we'd use a PDF viewer library or open in browser
+        # For this demo, we'll just show the path and a button
+        label = QLabel(f"تم توليد ملف PDF في:\n{pdf_path}")
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("font-size: 16px; color: #1a2a6c;")
         layout.addWidget(label)
+
+        open_btn = QPushButton("فتح الملف")
+        open_btn.clicked.connect(lambda: os.startfile(pdf_path) if os.name == 'nt' else os.system(f'open "{pdf_path}"'))
+        layout.addWidget(open_btn)
 
         close_btn = QPushButton("إغلاق")
         close_btn.clicked.connect(self.accept)

@@ -22,7 +22,6 @@ class StockController:
         prefix = "IN" if type == "IN" else "OUT"
         timestamp = datetime.datetime.now().strftime("%Y%m%d")
 
-        # Count existing movements for today to get sequence
         query = "SELECT COUNT(*) as count FROM movements WHERE type = ? AND date LIKE ?"
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         res = self.movement_model.db.execute_query(query, (type, f"{today}%"))
@@ -61,7 +60,6 @@ class StockController:
 
         movement_data['type'] = 'OUT'
 
-        # Calculate totals even for OUT if prices are provided (optional but good for tracking)
         subtotal, discount_amount, final_total = self.calculate_totals(items_list, movement_data.get('discount_percent', 0))
         movement_data['subtotal'] = subtotal
         movement_data['discount_amount'] = discount_amount
@@ -77,7 +75,6 @@ class StockController:
 
     def generate_movement_pdf(self, movement_id):
         movement = self.movement_model.get_by_id(movement_id)
-        # Fetch supplier name if it exists
         if movement['supplier_id']:
             from models.supplier import Supplier
             supplier = Supplier().get_by_id(movement['supplier_id'])

@@ -30,7 +30,7 @@ QWidget {
     color: #d4af37;
 }
 
-#Sidebar QPushButton[active="true"] {
+#Sidebar QPushButton[active="true"], #Sidebar QPushButton:checked {
     background-color: #2a3a7c;
     border-right: 5px solid #d4af37; /* Gold accent */
     color: #d4af37;
@@ -104,10 +104,8 @@ QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox {
     border: 1px solid #dcdde1;
     border-radius: 8px;
     padding: 10px;
-    padding-right: 35px; /* Comfortable space for arrows and Arabic text */
-    padding-left: 10px;
     background-color: white;
-    color: #1a2a6c;
+    color: #1a2a6c; /* Ensure text is visible */
     selection-background-color: #d4af37;
     selection-color: #1a2a6c;
     font-size: 14px;
@@ -131,20 +129,6 @@ QComboBox QAbstractItemView {
     outline: none;
 }
 
-QSpinBox::up-button, QDoubleSpinBox::up-button {
-    subcontrol-origin: border;
-    subcontrol-position: top right;
-    width: 25px;
-    border-left: 1px solid #dcdde1;
-}
-
-QSpinBox::down-button, QDoubleSpinBox::down-button {
-    subcontrol-origin: border;
-    subcontrol-position: bottom right;
-    width: 25px;
-    border-left: 1px solid #dcdde1;
-}
-
 QLineEdit:focus {
     border: 1px solid #1a2a6c;
 }
@@ -155,7 +139,7 @@ QTableWidget {
     alternate-background-color: #f9f9f9;
     selection-background-color: #d4af37;
     selection-color: #1a2a6c;
-    color: #1a2a6c; /* Table text color */
+    color: #1a2a6c;
     border: 1px solid #dcdde1;
 }
 
@@ -186,15 +170,6 @@ QTabBar::tab {
 QTabBar::tab:selected {
     background: #1a2a6c;
     color: white;
-}
-
-#Sidebar QPushButton[active="true"] {
-    background-color: #2a3a7c;
-    border-right: 5px solid #d4af37;
-}
-
-QTabBar::tab:hover:!selected {
-    background: #e1e2e6;
 }
 
 /* Financial Summary Labels */

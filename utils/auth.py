@@ -1,20 +1,14 @@
-import bcrypt
-
 class AuthManager:
     _current_user = None
 
-    @staticmethod
-    def hash_password(password):
-        salt = bcrypt.gensalt()
-        return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
-
-    @staticmethod
-    def verify_password(password, hashed):
-        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-
     @classmethod
-    def set_current_user(cls, user):
-        cls._current_user = user
+    def login(cls, username, password):
+        from models.user import User
+        user = User().authenticate(username, password)
+        if user:
+            cls._current_user = user
+            return True
+        return False
 
     @classmethod
     def get_current_user(cls):
@@ -25,29 +19,25 @@ class AuthManager:
         cls._current_user = None
 
     @classmethod
-    def has_permission(cls, module_name, action=None):
-        """
-        Checks if the current user has permission for a specific module and action.
-        """
+    def has_permission(cls, module, action=None):
         if not cls._current_user:
             return False
 
-        role = cls._current_user.get('role', '')
+        role = cls._current_user['role']
         if role == 'admin':
             return True
 
-        if action:
-            try:
-                from models.permission import Permission
-                return Permission().has_permission(cls._current_user['id'], module_name, action)
-            except Exception as e:
-                print(f"Permission check error: {e}")
-                return False
+        # Warehouse Keeper: Core operations
+        if role == 'warehouse_keeper':
+            if module in ['items', 'suppliers', 'stock_in', 'stock_out', 'locations', 'dashboard']:
+                if action == 'delete':
+                    return False
+                return True
 
-        # Default role-based fallbacks if no specific action provided
-        if module_name == 'supervisor':
-            return role in ['admin', 'supervisor']
-        if module_name == 'warehouse_keeper':
-            return role in ['admin', 'warehouse_keeper']
+        # Supervisor: Reports only
+        if role == 'supervisor':
+            if module in ['reports', 'dashboard']:
+                if action in [None, 'view', 'export']:
+                    return True
 
-        return True
+        return False

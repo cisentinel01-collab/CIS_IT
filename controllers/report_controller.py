@@ -3,12 +3,12 @@ from models.movement import Movement
 from models.supplier import Supplier
 from models.audit_log import AuditLog
 from utils.excel_gen import ExcelGenerator
+from models.settings import Settings
+from utils.pdf_gen import PDFGenerator
 import datetime
 
 class ReportController:
     def __init__(self):
-        from models.settings import Settings
-        from utils.pdf_gen import PDFGenerator
         self.item_model = Item()
         self.movement_model = Movement()
         self.supplier_model = Supplier()
@@ -42,15 +42,6 @@ class ReportController:
         self.excel_gen.export_data(filename, headers, data, title)
         return filename
 
-    def export_supplier_report(self, supplier_id):
-        movements = self.movement_model.get_history(type='IN')
-        movements = [m for m in movements if m['supplier_id'] == supplier_id]
-        headers = ["التاريخ", "الرقم المرجعي", "الإجمالي", "ملاحظات"]
-        data = [[m['date'], m['reference_no'], m['final_total'], m['notes']] for m in movements]
-        filename = f"reports/supplier_{supplier_id}_{datetime.datetime.now().strftime('%Y%m%d')}.xlsx"
-        self.excel_gen.export_data(filename, headers, data, "Supplier Report")
-        return filename
-
     def export_inventory_to_pdf(self):
         items = self.item_model.get_all_with_location()
         headers = ["كود الصنف", "اسم الصنف", "الفئة", "الموقع", "الكمية", "الحد الأدنى"]
@@ -74,5 +65,10 @@ class ReportController:
         self.pdf_gen.generate_report(filename, title, headers, data, self.settings_model.get_settings())
         return filename
 
-    def get_user_activity(self):
-        return self.audit_log.get_logs()
+    def export_audit_to_pdf(self):
+        logs = self.audit_log.get_logs(500)
+        headers = ["التاريخ", "المستخدم", "العملية", "الجدول", "المعرف"]
+        data = [[l['timestamp'], l['user_name'], l['action'], l['table_name'], l['record_id']] for l in logs]
+        filename = f"reports/audit_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
+        self.pdf_gen.generate_report(filename, "سجل نشاط المستخدمين", headers, data, self.settings_model.get_settings())
+        return filename

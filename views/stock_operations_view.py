@@ -197,7 +197,7 @@ class StockOperationsView(QWidget):
         if ok and code:
             for i in range(self.item_combo.count()):
                 item_data = self.item_combo.itemData(i)
-                if item_data and (item_data['code'] == code or item_data.get('qr_code') == code):
+                if item_data and (item_data['code'] == code):
                     self.item_combo.setCurrentIndex(i)
                     return
             QMessageBox.warning(self, "تنبيه", "الصنف غير موجود في القائمة")
@@ -217,7 +217,6 @@ class StockOperationsView(QWidget):
         if qty <= 0: return
 
         if self.op_type == "OUT":
-            # RE-FETCH ITEM DATA TO ENSURE LATEST STOCK
             current_item = Item().get_by_id(item_data['id'])
             if qty > current_item['current_stock']:
                 QMessageBox.warning(self, "تنبيه المخزون",
@@ -296,8 +295,6 @@ class StockOperationsView(QWidget):
             self.data_changed.emit()
             self.load_history()
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             QMessageBox.critical(self, "خطأ", f"فشل إتمام العملية: {str(e)}")
 
     def reset_form(self):
@@ -313,4 +310,4 @@ class StockOperationsView(QWidget):
             self.issuing_entity.clear()
             self.receiver_name.clear()
             self.reason_input.clear()
-        self.load_items() # REFRESH COMBO BOX DATA
+        self.load_items()

@@ -1,25 +1,25 @@
 from models.base_model import BaseModel
+import bcrypt
 
 class User(BaseModel):
     table_name = "users"
 
-    def get_by_username(self, username):
-        query = f"SELECT * FROM {self.table_name} WHERE username = ? AND is_active = 1"
+    def authenticate(self, username, password):
+        query = "SELECT * FROM users WHERE username = ? AND is_active = 1"
         results = self.db.execute_query(query, (username,))
-        return results[0] if results else None
+        if results:
+            user = results[0]
+            if bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+                return user
+        return None
 
-    def create_user(self, username, password_hash, full_name, role, job_title=None, department=None):
-        return self.create({
-            "username": username,
-            "password_hash": password_hash,
-            "full_name": full_name,
-            "role": role,
-            "job_title": job_title,
-            "department": department,
-            "status": "active"
-        })
+    def create_user(self, data):
+        if 'password' in data:
+            data['password_hash'] = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            del data['password']
+        return self.create(data)
 
-    def get_all_users(self):
-        query = f"SELECT * FROM {self.table_name} WHERE status != 'deleted'"
-        # We handle 'is_deleted' if we use soft delete, or just status 'disabled'
+    def get_all(self):
+        # Users don't have is_deleted usually, but status
+        query = "SELECT * FROM users"
         return self.db.execute_query(query)

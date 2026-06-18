@@ -1,107 +1,151 @@
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-                             QPushButton, QLabel, QStackedWidget, QFrame, QSpacerItem, QSizePolicy)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QIcon
+                             QPushButton, QLabel, QStackedWidget, QMessageBox, QFrame)
+from PySide6.QtCore import Qt, QSize
 import qtawesome as qta
+
+from views.dashboard_view import DashboardView
+from views.items_view import ItemsView
+from views.suppliers_view import SuppliersView
+from views.stock_operations_view import StockOperationsView
+from views.reports_view import ReportsView
+from views.user_management_view import UserManagementView
+from views.settings_view import SettingsView
+from views.locations_view import LocationsView
+
+from controllers.dashboard_controller import DashboardController
+from controllers.item_controller import ItemController
+from controllers.supplier_controller import SupplierController
+from controllers.stock_controller import StockController
+from controllers.report_controller import ReportController
+from controllers.user_controller import UserController
+
+from utils.auth import AuthManager
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("American Marine Services - WMS")
+        self.setWindowTitle("نظام إدارة المخازن - American Marine Services")
         self.resize(1200, 800)
         self.setLayoutDirection(Qt.RightToLeft)
 
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-        self.main_layout = QHBoxLayout(self.central_widget)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_layout.setSpacing(0)
+        self.setup_ui()
+        self.load_dashboard()
 
-        self.setup_sidebar()
+    def setup_ui(self):
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        layout = QHBoxLayout(main_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        # Content Area
-        self.content_area = QVBoxLayout()
-        self.main_layout.addLayout(self.content_area)
-
-        self.setup_header()
-
-        self.stack = QStackedWidget()
-        self.content_area.addWidget(self.stack)
-
-    def setup_sidebar(self):
+        # Sidebar
         self.sidebar = QFrame()
         self.sidebar.setObjectName("Sidebar")
-        self.sidebar_layout = QVBoxLayout(self.sidebar)
+        sidebar_layout = QVBoxLayout(self.sidebar)
+        sidebar_layout.setContentsMargins(0, 20, 0, 20)
+        sidebar_layout.setSpacing(5)
 
-        # Logo placeholder
-        logo_label = QLabel("AMS WMS")
-        logo_label.setStyleSheet("color: #d4af37; font-size: 24px; font-weight: bold; margin: 20px; text-align: center;")
-        self.sidebar_layout.addWidget(logo_label)
+        # Logo/Brand
+        brand_label = QLabel("AMS WMS")
+        brand_label.setStyleSheet("color: #d4af37; font-size: 24px; font-weight: bold; margin-bottom: 20px; padding: 10px;")
+        brand_label.setAlignment(Qt.AlignCenter)
+        sidebar_layout.addWidget(brand_label)
 
         self.nav_buttons = {}
+        self.create_nav_button("dashboard", "الرئيسية", "fa5s.chart-line")
+        self.create_nav_button("items", "الأصناف", "fa5s.boxes")
+        self.create_nav_button("stock_in", "الوارد (المشتريات)", "fa5s.file-import")
+        self.create_nav_button("stock_out", "الصادر (صرف)", "fa5s.file-export")
+        self.create_nav_button("suppliers", "الموردين", "fa5s.truck")
+        self.create_nav_button("locations", "المواقع", "fa5s.map-marker-alt")
+        self.create_nav_button("reports", "التقارير", "fa5s.file-alt")
+        self.create_nav_button("users", "المستخدمين", "fa5s.users")
+        self.create_nav_button("settings", "الإعدادات", "fa5s.cog")
 
-        nav_items = [
-            ("dashboard", "لوحة التحكم", "fa5s.tachometer-alt"),
-            ("items", "الأصناف", "fa5s.boxes"),
-            ("locations", "مواقع التخزين", "fa5s.map-marker-alt"),
-            ("suppliers", "الموردين", "fa5s.truck"),
-            ("stock_in", "وارد للمخزن", "fa5s.arrow-down"),
-            ("stock_out", "صادر من المخزن", "fa5s.arrow-up"),
-            ("reports", "التقارير", "fa5s.chart-bar"),
-            ("users", "المستخدمين", "fa5s.users-cog"),
-            ("settings", "الإعدادات", "fa5s.cog")
-        ]
-
-        for key, text, icon_name in nav_items:
-            btn = QPushButton(text)
-            btn.setIcon(qta.icon(icon_name, color='white'))
-            btn.setObjectName(f"nav_{key}")
-            btn.setCursor(Qt.PointingHandCursor)
-            btn.clicked.connect(lambda checked, k=key: self.switch_view(k))
-            self.sidebar_layout.addWidget(btn)
-            self.nav_buttons[key] = btn
-
-        self.sidebar_layout.addStretch()
+        sidebar_layout.addStretch()
 
         logout_btn = QPushButton("تسجيل الخروج")
-        logout_btn.setIcon(qta.icon("fa5s.sign-out-alt", color='white'))
-        logout_btn.clicked.connect(self.close) # Placeholder
-        self.sidebar_layout.addWidget(logout_btn)
+        logout_btn.setIcon(qta.icon("fa5s.sign-out-alt", color="white"))
+        logout_btn.clicked.connect(self.handle_logout)
+        sidebar_layout.addWidget(logout_btn)
 
-        self.main_layout.addWidget(self.sidebar)
+        layout.addWidget(self.sidebar)
 
-    def setup_header(self):
-        self.header = QFrame()
-        self.header.setObjectName("Header")
-        header_layout = QHBoxLayout(self.header)
+        # Content Area
+        content_container = QWidget()
+        self.content_layout = QVBoxLayout(content_container)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.view_title = QLabel("لوحة التحكم")
-        header_layout.addWidget(self.view_title)
-
+        # Header
+        header = QFrame()
+        header.setObjectName("Header")
+        header_layout = QHBoxLayout(header)
+        self.page_title = QLabel("الرئيسية")
+        header_layout.addWidget(self.page_title)
         header_layout.addStretch()
 
-        self.user_info = QLabel("مرحباً، مدير النظام")
-        header_layout.addWidget(self.user_info)
+        user = AuthManager.get_current_user()
+        user_info = QLabel(f"مرحباً، {user['full_name'] if user else ''}")
+        header_layout.addWidget(user_info)
 
-        self.content_area.addWidget(self.header)
+        self.content_layout.addWidget(header)
 
-    def switch_view(self, key):
-        # Update active button style
-        for k, btn in self.nav_buttons.items():
-            btn.setProperty("active", k == key)
-            btn.style().unpolish(btn)
-            btn.style().polish(btn)
+        # Stacked Widget for pages
+        self.stack = QStackedWidget()
+        self.content_layout.addWidget(self.stack)
 
-        # Actual switching logic will be implemented later
-        titles = {
-            "dashboard": "لوحة التحكم",
-            "items": "إدارة الأصناف",
-            "locations": "إدارة مواقع التخزين",
-            "suppliers": "إدارة الموردين",
-            "stock_in": "عمليات الوارد",
-            "stock_out": "عمليات الصادر",
-            "reports": "التقارير والإحصائيات",
-            "users": "إدارة المستخدمين",
-            "settings": "إعدادات النظام"
-        }
-        self.view_title.setText(titles.get(key, ""))
+        layout.addWidget(content_container)
+
+    def create_nav_button(self, id, text, icon_name):
+        if not AuthManager.has_permission(id):
+            return
+
+        btn = QPushButton(text)
+        btn.setIcon(qta.icon(icon_name, color="white"))
+        btn.setIconSize(QSize(20, 20))
+        btn.setCheckable(True)
+        btn.setAutoExclusive(True)
+        btn.clicked.connect(lambda: self.switch_page(id))
+        self.sidebar.layout().addWidget(btn)
+        self.nav_buttons[id] = btn
+
+    def switch_page(self, page_id):
+        self.nav_buttons[page_id].setChecked(True)
+        self.page_title.setText(self.nav_buttons[page_id].text())
+
+        # Clear stack and load new page to ensure fresh data
+        if self.stack.currentWidget():
+            self.stack.removeWidget(self.stack.currentWidget())
+
+        if page_id == "dashboard":
+            view = DashboardView(DashboardController())
+        elif page_id == "items":
+            view = ItemsView(ItemController())
+        elif page_id == "suppliers":
+            view = SuppliersView(SupplierController())
+        elif page_id == "stock_in":
+            view = StockOperationsView(StockController(), "IN")
+        elif page_id == "stock_out":
+            view = StockOperationsView(StockController(), "OUT")
+        elif page_id == "reports":
+            view = ReportsView(ReportController())
+        elif page_id == "users":
+            view = UserManagementView(UserController())
+        elif page_id == "settings":
+            view = SettingsView()
+        elif page_id == "locations":
+            view = LocationsView()
+
+        self.stack.addWidget(view)
+        self.stack.setCurrentWidget(view)
+
+    def load_dashboard(self):
+        if "dashboard" in self.nav_buttons:
+            self.switch_page("dashboard")
+
+    def handle_logout(self):
+        AuthManager.logout()
+        from views.login_view import LoginView
+        self.login_window = LoginView()
+        self.login_window.show()
+        self.close()

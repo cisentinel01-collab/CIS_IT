@@ -9,8 +9,6 @@ class BaseModel:
     def get_all(self, include_deleted=False):
         query = f"SELECT * FROM {self.table_name}"
         if not include_deleted:
-            # Check if is_deleted column exists for this table in schema
-            # For simplicity, we assume it exists if we are using it
             query += " WHERE is_deleted = 0"
         return self.db.execute_query(query)
 

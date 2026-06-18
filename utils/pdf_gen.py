@@ -5,11 +5,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from arabic_reshaper import reshape
-from bidi.algorithm import get_display
-
-# Note: We might need to install arabic-reshaper and python-bidi
-# Let's check if they are available or install them.
 
 class PDFGenerator:
     def __init__(self):
@@ -37,7 +32,7 @@ class PDFGenerator:
                     'support_zwj': True,
                     'unreshape_quotes': True,
                     'use_expanded_forms': True,
-                    'reshape_digits': False
+                    'reshape_digits': True, # Important for proper Arabic/Indic digits
                 }
             )
         except ImportError:
@@ -53,13 +48,10 @@ class PDFGenerator:
 
         try:
             from bidi.algorithm import get_display
-
-            # Check if there's any Arabic character
-            if any("\u0600" <= c <= "\u06FF" for c in text):
-                reshaped_text = self.reshaper.reshape(text)
-                return get_display(reshaped_text)
-            else:
-                return text
+            # First reshape the text to handle character joining (ligatures)
+            reshaped_text = self.reshaper.reshape(text)
+            # Then apply bidi for RTL layout reordering
+            return get_display(reshaped_text)
         except Exception as e:
             print(f"Arabic preparing error: {e}")
             return text
@@ -92,8 +84,7 @@ class PDFGenerator:
             fontSize=12, alignment=2, textColor=colors.HexColor("#1a2a6c")
         )
 
-        # 1. Header with Logo and Company Info
-        header_data = []
+        # 1. Header
         logo_path = "logo/logo.png"
         if not os.path.exists(logo_path) and company_info and company_info.get('logo_path'):
             logo_path = company_info['logo_path']
@@ -104,7 +95,6 @@ class PDFGenerator:
                 logo_img = Image(logo_path, width=1.2*inch, height=1.2*inch)
             except: pass
 
-        # Top Table for Header
         company_name = company_info.get('company_name', 'American Marine Services Free-Zone')
         company_addr = company_info.get('address', '')
         phone = company_info.get('phone', '')
@@ -123,18 +113,17 @@ class PDFGenerator:
         elements.append(header_table)
         elements.append(Spacer(1, 0.2*inch))
 
-        # 2. Separator Line
         elements.append(Table([[""]], colWidths=[doc.width], style=[('LINEBELOW', (0,0), (-1,-1), 2, colors.HexColor("#1a2a6c"))]))
         elements.append(Spacer(1, 0.2*inch))
 
-        # 3. Document Title
+        # 2. Title
         title_text = data.get('report_title')
         if not title_text:
             title_text = "فاتورة توريد مخزني" if data['type'] == 'IN' else "سند صرف مخزني"
         elements.append(Paragraph(self._prepare_arabic(title_text), style_title))
         elements.append(Spacer(1, 0.2*inch))
 
-        # 4. Details Section (Reference, Date, etc.)
+        # 3. Details
         party_label = "المورد:" if data['type'] == 'IN' else "المستلم:"
         party_name = data.get('supplier_name') if data['type'] == 'IN' else data.get('receiver_name', '')
 
@@ -153,7 +142,7 @@ class PDFGenerator:
         elements.append(details_table)
         elements.append(Spacer(1, 0.3*inch))
 
-        # 5. Items Table
+        # 4. Table
         table_headers = [
             self._prepare_arabic("الإجمالي"),
             self._prepare_arabic("السعر"),
@@ -177,7 +166,6 @@ class PDFGenerator:
                 self._prepare_arabic(item.get('item_name', ''))
             ])
 
-        # Modern Table Style
         col_widths = [1.0*inch, 1.0*inch, 0.8*inch, 0.8*inch, 1.2*inch, 2.5*inch]
         items_table = Table(table_rows, colWidths=col_widths, repeatRows=1)
         items_table.setStyle(TableStyle([
@@ -196,7 +184,7 @@ class PDFGenerator:
         elements.append(items_table)
         elements.append(Spacer(1, 0.2*inch))
 
-        # 6. Summary and Financials
+        # 5. Summary
         if 'subtotal' in data:
             summary_data = [
                 [f"{data['subtotal']:,.2f}", Paragraph(self._prepare_arabic("المجموع الفرعي:"), style_arabic_right)],
@@ -211,18 +199,17 @@ class PDFGenerator:
                 ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ]))
 
-            # Wrap summary in a table to align right
             outer_summary = Table([[summary_table]], colWidths=[doc.width])
             outer_summary.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'RIGHT')]))
             elements.append(outer_summary)
 
-        # 7. Notes
+        # 6. Notes
         if data.get('notes'):
             elements.append(Spacer(1, 0.2*inch))
             elements.append(Paragraph(self._prepare_arabic("ملاحظات:"), style_label))
             elements.append(Paragraph(self._prepare_arabic(data['notes']), style_arabic_right))
 
-        # 8. Footer (Signatures and Stamp)
+        # 7. Footer
         elements.append(Spacer(1, 0.5*inch))
         footer_data = [
             [self._prepare_arabic("توقيع المستلم"), "", self._prepare_arabic("توقيع أمين المخزن"), "", self._prepare_arabic("ختم الشركة")],
@@ -232,7 +219,7 @@ class PDFGenerator:
         footer_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, -1), self.font_name),
-            ('BOX', (4, 0), (4, 1), 1, colors.black), # Stamp box
+            ('BOX', (4, 0), (4, 1), 1, colors.black),
             ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
         ]))
         elements.append(footer_table)
@@ -244,31 +231,13 @@ class PDFGenerator:
         elements = []
 
         styles = getSampleStyleSheet()
-        arabic_style = ParagraphStyle(
-            'ArabicStyle', parent=styles['Normal'], fontName=self.font_name, alignment=2, fontSize=12
-        )
         title_style = ParagraphStyle(
             'TitleStyle', parent=styles['Normal'], fontName='Cairo-Bold' if self.font_name == 'Cairo' else 'Helvetica-Bold',
             alignment=1, fontSize=18, spaceAfter=20
         )
 
-        # Header
-        logo_path = "logo/logo.png"
-        if os.path.exists(logo_path):
-            try:
-                elements.append(Image(logo_path, width=100, height=100))
-                elements.append(Spacer(1, 12))
-            except: pass
-
         elements.append(Paragraph(self._prepare_arabic(title), title_style))
 
-        # Table
-        table_data = [[self._prepare_arabic(h) for h in reversed(headers)]]
-        for row in data:
-            table_data.append([self._prepare_arabic(str(cell)) for row_cell in reversed(row) for cell in [row_cell]]) # Rough reverse for RTL
-            # Note: reversed() here is a simple way to simulate RTL in standard Table
-
-        # Re-evaluating the table data mapping for better safety
         table_data = []
         header_row = [self._prepare_arabic(h) for h in headers]
         header_row.reverse()
@@ -283,7 +252,7 @@ class PDFGenerator:
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (0, 0), (-1,-1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, -1), self.font_name),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ]))

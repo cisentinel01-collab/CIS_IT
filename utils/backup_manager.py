@@ -1,31 +1,17 @@
 import shutil
-import datetime
 import os
+import datetime
 
 class BackupManager:
-    def __init__(self, db_path="database/wms.db", backup_dir="backups"):
-        self.db_path = db_path
-        self.backup_dir = backup_dir
-        if not os.path.exists(self.backup_dir):
-            os.makedirs(self.backup_dir)
-
-    def create_backup(self):
+    @staticmethod
+    def create_backup(db_path="database/wms_v2.db", backup_dir="backups"):
+        os.makedirs(backup_dir, exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_file = os.path.join(self.backup_dir, f"wms_backup_{timestamp}.db")
-        try:
-            shutil.copy2(self.db_path, backup_file)
-            return backup_file
-        except Exception as e:
-            print(f"Backup error: {e}")
-            return None
+        backup_path = os.path.join(backup_dir, f"backup_{timestamp}.db")
+        shutil.copy2(db_path, backup_path)
+        return backup_path
 
-    def restore_backup(self, backup_file):
-        try:
-            shutil.copy2(backup_file, self.db_path)
-            return True
-        except Exception as e:
-            print(f"Restore error: {e}")
-            return False
-
-    def list_backups(self):
-        return sorted([f for f in os.listdir(self.backup_dir) if f.endswith(".db")], reverse=True)
+    @staticmethod
+    def restore_backup(backup_path, db_path="database/wms_v2.db"):
+        shutil.copy2(backup_path, db_path)
+        return True
