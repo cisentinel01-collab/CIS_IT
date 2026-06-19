@@ -6,7 +6,7 @@ QMainWindow {
 
 QWidget {
     font-family: 'Cairo', 'Segoe UI', Tahoma;
-    color: #1a2a6c; /* Default text color is Dark Navy for visibility */
+    color: #000000; /* Pure Black default for maximum visibility */
 }
 
 /* Sidebar Navigation */
@@ -45,7 +45,7 @@ QWidget {
 }
 
 #Header QLabel {
-    color: #1a2a6c;
+    color: #1a2a6c !important;
     font-size: 18px;
     font-weight: bold;
 }
@@ -96,6 +96,17 @@ QPushButton:!objectName {
     background-color: #ffffff;
     color: #1a2a6c;
     border: 2px solid #1a2a6c;
+}
+
+/* Labels Visibility Fix */
+QLabel, QGroupBox, QCheckBox {
+    color: #000000 !important;
+    font-weight: bold;
+}
+
+/* Ensure Form Labels are black */
+QFormLayout QLabel {
+    color: #000000 !important;
 }
 
 /* Inputs - High Contrast */
