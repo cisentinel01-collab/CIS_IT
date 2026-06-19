@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QDialog, QFormLayout, QComboBox,
-                             QSpinBox, QMessageBox, QFileDialog)
+                             QSpinBox, QMessageBox, QFileDialog, QInputDialog)
 from PySide6.QtCore import Qt, Signal
 import qtawesome as qta
 import os
@@ -212,7 +212,7 @@ class ItemDialog(QDialog):
         layout.addRow(btns)
 
     def handle_scan(self):
-        code, ok = QMessageBox.getText(self, "مسح QR", "يرجى مسح كود QR الآن:")
+        code, ok = QInputDialog.getText(self, "مسح QR", "يرجى مسح كود QR الآن:")
         if ok and code:
             self.code_input.setText(code)
 

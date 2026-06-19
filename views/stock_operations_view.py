@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QComboBox, QSpinBox, QFormLayout,
-                             QGroupBox, QMessageBox, QTabWidget)
+                             QGroupBox, QMessageBox, QTabWidget, QDoubleSpinBox, QInputDialog)
 from PySide6.QtCore import Qt, Signal
 import qtawesome as qta
 from models.item import Item
@@ -221,7 +221,7 @@ class StockOperationsView(QWidget):
         self.summary_label.setText(f"المجموع: {subtotal:,.2f} | الخصم: {discount_amt:,.2f} | الإجمالي: {final:,.2f}")
 
     def handle_item_scan(self):
-        code, ok = QMessageBox.getText(self, "مسح QR", "يرجى مسح كود QR الصنف:")
+        code, ok = QInputDialog.getText(self, "مسح QR", "يرجى مسح كود QR الصنف:")
         if ok and code:
             for i in range(self.item_combo.count()):
                 item_data = self.item_combo.itemData(i)

@@ -1,13 +1,14 @@
-/* Professional Arabic WMS Theme - HIGH CONTRAST DARK MODE */
+/* Professional Arabic WMS Theme - HIGH CONTRAST DARK MODE V4 */
 
-QMainWindow, QDialog {
+QMainWindow, QDialog, QMessageBox {
     background-color: #000000; /* Pure Black Background */
+    color: #ffffff;
 }
 
 QWidget {
     font-family: 'Cairo', 'Segoe UI', Tahoma;
     background-color: #000000;
-    color: #ffffff; /* White text by default */
+    color: #ffffff !important; /* Force White text globally */
 }
 
 /* Sidebar Navigation */
@@ -19,7 +20,7 @@ QWidget {
 
 #Sidebar QPushButton {
     background-color: transparent;
-    color: #ffffff;
+    color: #ffffff !important;
     border: none;
     padding: 15px 20px;
     text-align: right;
@@ -29,13 +30,13 @@ QWidget {
 
 #Sidebar QPushButton:hover {
     background-color: #222222;
-    color: #d4af37;
+    color: #d4af37 !important;
 }
 
 #Sidebar QPushButton:checked, #Sidebar QPushButton[active="true"] {
     background-color: #1a2a6c;
     border-right: 5px solid #d4af37;
-    color: #d4af37;
+    color: #d4af37 !important;
     font-weight: bold;
 }
 
@@ -43,7 +44,7 @@ QWidget {
 #Header {
     background-color: #000000;
     min-height: 65px;
-    border-bottom: 2px solid #d4af37; /* Gold accent */
+    border-bottom: 2px solid #d4af37;
 }
 
 #Header QLabel {
@@ -61,7 +62,7 @@ QWidget {
 }
 
 #CardTitle {
-    color: #d4af37;
+    color: #d4af37 !important;
     font-size: 15px;
     font-weight: bold;
 }
@@ -69,7 +70,7 @@ QWidget {
 #CardValue {
     font-size: 28px;
     font-weight: bold;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 /* Buttons - HIGH VISIBILITY GOLD & WHITE */
@@ -79,7 +80,7 @@ QPushButton {
     font-weight: bold;
     font-size: 13px;
     min-height: 20px;
-    color: #ffffff;
+    color: #ffffff !important;
     border: 1px solid #ffffff;
 }
 
@@ -90,7 +91,7 @@ QPushButton#PrimaryButton {
 
 QPushButton#GoldButton {
     background-color: #d4af37;
-    color: #000000;
+    color: #000000 !important; /* Black text on Gold button */
     border: 1px solid #d4af37;
 }
 
@@ -98,8 +99,8 @@ QPushButton:hover {
     background-color: #333333;
 }
 
-/* Labels Visibility Fix */
-QLabel, QGroupBox, QCheckBox {
+/* Labels and Group Titles - FORCE WHITE */
+QLabel, QGroupBox, QCheckBox, QRadioButton {
     color: #ffffff !important;
     background: transparent;
     font-weight: bold;
@@ -107,12 +108,13 @@ QLabel, QGroupBox, QCheckBox {
 
 QGroupBox::title {
     color: #d4af37 !important;
+    padding: 5px;
 }
 
 /* Inputs - High Contrast Dark */
 QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QDateEdit {
     background-color: #111111;
-    border: 2px solid #d4af37; /* Gold border */
+    border: 2px solid #d4af37;
     border-radius: 6px;
     padding: 10px;
     color: #ffffff !important;
@@ -139,10 +141,10 @@ QComboBox {
 }
 
 QComboBox QAbstractItemView {
-    background-color: #111111;
-    color: #ffffff;
+    background-color: #000000;
+    color: #ffffff !important;
     selection-background-color: #d4af37;
-    selection-color: #000000;
+    selection-color: #000000 !important;
     border: 1px solid #d4af37;
 }
 
@@ -151,15 +153,15 @@ QTableWidget {
     background-color: #111111;
     gridline-color: #333333;
     border: 2px solid #d4af37;
-    color: #ffffff;
+    color: #ffffff !important;
     font-size: 14px;
     selection-background-color: #d4af37;
-    selection-color: #000000;
+    selection-color: #000000 !important;
 }
 
 QHeaderView::section {
     background-color: #1a2a6c;
-    color: #ffffff;
+    color: #ffffff !important;
     padding: 12px;
     font-weight: bold;
     border: 1px solid #d4af37;
@@ -174,7 +176,7 @@ QTabWidget::pane {
 
 QTabBar::tab {
     background-color: #111111;
-    color: #ffffff;
+    color: #ffffff !important;
     padding: 15px 30px;
     border: 1px solid #333333;
     font-weight: bold;
@@ -183,7 +185,7 @@ QTabBar::tab {
 
 QTabBar::tab:selected {
     background-color: #1a2a6c;
-    color: #d4af37;
+    color: #d4af37 !important;
     border-bottom: 2px solid #d4af37;
 }
 
@@ -193,7 +195,7 @@ QProgressBar {
     border-radius: 8px;
     text-align: center;
     background-color: #111111;
-    color: #ffffff;
+    color: #ffffff !important;
     font-weight: bold;
 }
 
@@ -210,4 +212,13 @@ QProgressBar::chunk {
     padding: 20px;
     border: 2px solid #ffffff;
     border-radius: 10px;
+}
+
+/* Custom for MessageBox and Dialogs */
+QDialog QLabel {
+    color: #ffffff !important;
+}
+
+QMessageBox QLabel {
+    color: #ffffff !important;
 }
