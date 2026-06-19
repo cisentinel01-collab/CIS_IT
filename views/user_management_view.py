@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QGroupBox, QDialog, QFormLayout, QComboBox, QMessageBox)
 from PySide6.QtCore import Qt
+import qtawesome as qta
 
 class UserManagementView(QWidget):
     def __init__(self, controller):
