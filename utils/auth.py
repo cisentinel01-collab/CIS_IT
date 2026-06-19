@@ -25,16 +25,22 @@ class AuthManager:
 
         role = cls._current_user['role']
 
-        # 1. مسئول المخزن (Full Access)
-        if role in ['warehouse_manager', 'admin']:
+        # 1. Admin: Full Access to everything including 'users'
+        if role == 'admin':
             return True
 
-        # 2. المتابعة (View/Report Only)
+        # 2. مسئول المخزن (Full Operational Access, but NO 'users' module)
+        if role == 'warehouse_manager':
+            if module == 'users':
+                return False
+            return True
+
+        # 3. المتابعة (View/Report Only)
         if role == 'follow_up':
             # Allow viewing dashboard and reports
             if module in ['dashboard', 'reports']:
                 return True
-            # Allow viewing lists (Items, Suppliers, Locations) but no editing
+            # Allow viewing lists (Items, Suppliers, Locations) but no editing/stock ops
             if module in ['items', 'suppliers', 'locations']:
                 return action in [None, 'view', 'export']
             return False

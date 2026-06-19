@@ -77,8 +77,10 @@ class ItemsView(QWidget):
             edit_btn.setStyleSheet("background-color: #f39c12; color: white; border-radius: 5px; font-weight: bold;")
             edit_btn.clicked.connect(lambda _, i=item: self.show_edit_dialog(i))
 
-            delete_btn = QPushButton("حذف")
-            delete_btn.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 5px; font-weight: bold;")
+            delete_btn = QPushButton()
+            delete_btn.setIcon(qta.icon("fa5s.trash-alt", color="white"))
+            delete_btn.setFixedSize(30, 30)
+            delete_btn.setStyleSheet("background-color: #e74c3c; border-radius: 5px;")
             delete_btn.clicked.connect(lambda _, i=item: self.handle_delete(i))
 
             btns_layout.addWidget(edit_btn)

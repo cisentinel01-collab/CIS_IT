@@ -5,36 +5,47 @@ def migrate():
     db = DBManager()
     user_model = User()
 
-    # Responsibilities were consolidated to 2 roles per user request:
-    # 1. مسؤول المخزن (warehouse_manager) - Full Access
-    # 2. المتابعة (follow_up) - View only
+    # Requirements:
+    # 1. Admin (Full access + User Management) - pass: adminyousef
+    # 2. مسؤول المخزن (Full access except Users)
+    # 3. المتابعة (View only)
 
-    # Check if manager exists
-    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE username = 'admin'")
+    # Check if any admin exists. If not, create the default one.
+    # We NO LONGER delete users here to preserve data added via UI.
+
+    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'admin'")
+    if res[0]['count'] == 0:
+        print("Creating default admin...")
+        user_model.create_user({
+            "username": "admin",
+            "password": "adminyousef",
+            "full_name": "المدير العام",
+            "role": "admin"
+        })
+
+    # Check for warehouse_manager
+    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'warehouse_manager'")
     if res[0]['count'] == 0:
         print("Creating default manager...")
         user_model.create_user({
-            "username": "admin",
-            "password": "admin",
+            "username": "manager",
+            "password": "123",
             "full_name": "مسؤول المخزن",
             "role": "warehouse_manager"
         })
-    else:
-        print("Updating existing admin to manager role...")
-        db.execute_query("UPDATE users SET role = 'warehouse_manager', full_name = 'مسؤول المخزن' WHERE username = 'admin'", commit=True)
 
-    # Check if follow_up exists
-    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE username = 'user'")
+    # Check for follow_up
+    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'follow_up'")
     if res[0]['count'] == 0:
         print("Creating default follow-up user...")
         user_model.create_user({
             "username": "user",
-            "password": "user",
+            "password": "123",
             "full_name": "المتابعة",
             "role": "follow_up"
         })
 
-    print("Migration complete.")
+    print("Migration complete. System ready.")
 
 if __name__ == "__main__":
     migrate()

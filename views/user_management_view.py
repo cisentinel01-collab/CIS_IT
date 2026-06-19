@@ -39,8 +39,10 @@ class UserManagementView(QWidget):
             role_map = {"warehouse_manager": "مسؤول مخزن", "follow_up": "المتابعة"}
             self.table.setItem(row, 3, QTableWidgetItem(role_map.get(u['role'], u['role'])))
 
-            del_btn = QPushButton("حذف")
-            del_btn.setStyleSheet("background-color: #e74c3c; color: white;")
+            del_btn = QPushButton()
+            del_btn.setIcon(qta.icon("fa5s.trash-alt", color="white"))
+            del_btn.setFixedSize(30, 30)
+            del_btn.setStyleSheet("background-color: #e74c3c; border-radius: 5px;")
             del_btn.clicked.connect(lambda _, user=u: self.handle_delete(user))
             self.table.setCellWidget(row, 4, del_btn)
 

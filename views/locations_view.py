@@ -54,8 +54,10 @@ class LocationsView(QWidget):
             self.table.setItem(row, 1, QTableWidgetItem(loc['name']))
             self.table.setItem(row, 2, QTableWidgetItem(loc['description'] or ""))
 
-            del_btn = QPushButton("حذف")
-            del_btn.setStyleSheet("background-color: #e74c3c; color: white;")
+            del_btn = QPushButton()
+            del_btn.setIcon(qta.icon("fa5s.trash-alt", color="white"))
+            del_btn.setFixedSize(30, 30)
+            del_btn.setStyleSheet("background-color: #e74c3c; border-radius: 5px;")
             del_btn.clicked.connect(lambda _, l=loc: self.handle_delete(l))
             self.table.setCellWidget(row, 3, del_btn)
 

@@ -61,8 +61,10 @@ class SuppliersView(QWidget):
             edit_btn = QPushButton("تعديل")
             edit_btn.clicked.connect(lambda _, supplier=s: self.show_edit_dialog(supplier))
 
-            delete_btn = QPushButton("حذف")
-            delete_btn.setStyleSheet("background-color: #e74c3c; color: white;")
+            delete_btn = QPushButton()
+            delete_btn.setIcon(qta.icon("fa5s.trash-alt", color="white"))
+            delete_btn.setFixedSize(30, 30)
+            delete_btn.setStyleSheet("background-color: #e74c3c; border-radius: 5px;")
             delete_btn.clicked.connect(lambda _, supplier=s: self.handle_delete(supplier))
 
             btns_layout.addWidget(edit_btn)
@@ -88,12 +90,15 @@ class SuppliersView(QWidget):
 
     def show_add_dialog(self):
         from PySide6.QtWidgets import QDialog, QFormLayout
+        from utils.validator import Validator
         dialog = QDialog(self)
         dialog.setWindowTitle("إضافة مورد")
         d_layout = QFormLayout(dialog)
 
         name = QLineEdit()
+        Validator.setup_strict_validation(name, "name")
         phone = QLineEdit()
+        Validator.setup_strict_validation(phone, "phone")
         email = QLineEdit()
         address = QLineEdit()
         notes = QLineEdit()
@@ -122,12 +127,15 @@ class SuppliersView(QWidget):
 
     def show_edit_dialog(self, supplier):
         from PySide6.QtWidgets import QDialog, QFormLayout
+        from utils.validator import Validator
         dialog = QDialog(self)
         dialog.setWindowTitle("تعديل مورد")
         d_layout = QFormLayout(dialog)
 
         name = QLineEdit(supplier['name'])
+        Validator.setup_strict_validation(name, "name")
         phone = QLineEdit(supplier['phone'] or "")
+        Validator.setup_strict_validation(phone, "phone")
         email = QLineEdit(supplier['email'] or "")
         address = QLineEdit(supplier['address'] or "")
         notes = QLineEdit(supplier['notes'] or "")
