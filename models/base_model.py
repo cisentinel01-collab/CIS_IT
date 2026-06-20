@@ -9,30 +9,31 @@ class BaseModel:
     def get_all(self, include_deleted=False):
         query = f"SELECT * FROM {self.table_name}"
         if not include_deleted:
+            # Check if is_deleted column exists or just append if safe
             query += " WHERE is_deleted = 0"
         return self.db.execute_query(query)
 
     def get_by_id(self, record_id):
-        query = f"SELECT * FROM {self.table_name} WHERE id = ?"
+        query = f"SELECT * FROM {self.table_name} WHERE id = %s"
         results = self.db.execute_query(query, (record_id,))
         return results[0] if results else None
 
     def create(self, data):
         columns = ", ".join(data.keys())
-        placeholders = ", ".join(["?"] * len(data))
-        query = f"INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})"
+        placeholders = ", ".join(["%s"] * len(data))
+        query = f"INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders}) RETURNING id"
         return self.db.execute_query(query, tuple(data.values()), commit=True)
 
     def update(self, record_id, data):
-        set_clause = ", ".join([f"{col} = ?" for col in data.keys()])
-        query = f"UPDATE {self.table_name} SET {set_clause} WHERE id = ?"
+        set_clause = ", ".join([f"{col} = %s" for col in data.keys()])
+        query = f"UPDATE {self.table_name} SET {set_clause} WHERE id = %s"
         params = tuple(data.values()) + (record_id,)
         self.db.execute_query(query, params, commit=True)
 
     def soft_delete(self, record_id):
-        query = f"UPDATE {self.table_name} SET is_deleted = 1 WHERE id = ?"
+        query = f"UPDATE {self.table_name} SET is_deleted = 1 WHERE id = %s"
         self.db.execute_query(query, (record_id,), commit=True)
 
     def delete(self, record_id):
-        query = f"DELETE FROM {self.table_name} WHERE id = ?"
+        query = f"DELETE FROM {self.table_name} WHERE id = %s"
         self.db.execute_query(query, (record_id,), commit=True)

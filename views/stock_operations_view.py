@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QComboBox, QSpinBox, QFormLayout,
-                             QGroupBox, QMessageBox, QTabWidget, QDoubleSpinBox, QInputDialog)
+                             QGroupBox, QMessageBox, QTabWidget, QDoubleSpinBox, QInputDialog, QDateEdit)
 from PySide6.QtCore import Qt, Signal
 import qtawesome as qta
 from models.item import Item
@@ -114,6 +114,26 @@ class StockOperationsView(QWidget):
         price_box.addWidget(QLabel("السعر:"))
         price_box.addWidget(self.price_input)
         selector_layout.addLayout(price_box)
+
+        if self.op_type == "IN":
+            batch_box = QHBoxLayout()
+            self.batch_input = QLineEdit()
+            self.batch_input.setPlaceholderText("رقم التشغيلة")
+            self.prod_date = QDateEdit()
+            self.prod_date.setCalendarPopup(True)
+            from PySide6.QtCore import QDate
+            self.prod_date.setDate(QDate.currentDate())
+            self.exp_date = QDateEdit()
+            self.exp_date.setCalendarPopup(True)
+            self.exp_date.setDate(QDate.currentDate().addYears(1))
+
+            batch_box.addWidget(QLabel("التشغيلة:"))
+            batch_box.addWidget(self.batch_input)
+            batch_box.addWidget(QLabel("إنتاج:"))
+            batch_box.addWidget(self.prod_date)
+            batch_box.addWidget(QLabel("إنتهاء:"))
+            batch_box.addWidget(self.exp_date)
+            selector_layout.addLayout(batch_box)
 
         add_item_btn = QPushButton("إضافة")
         add_item_btn.setObjectName("GoldButton")
@@ -268,14 +288,23 @@ class StockOperationsView(QWidget):
         self.table.setItem(row, 2, QTableWidgetItem(str(qty)))
         self.table.setItem(row, 3, QTableWidgetItem(str(price)))
 
-        self.items_to_move.append({
+        item_entry = {
             "item_id": item_data['id'],
             "item_name": item_data['name'],
             "item_code": item_data['code'],
             "quantity": qty,
             "price": price,
             "unit": item_data.get('unit', '')
-        })
+        }
+
+        if self.op_type == "IN":
+            item_entry["batch_info"] = {
+                "batch_number": self.batch_input.text() or "DEFAULT",
+                "production_date": self.prod_date.date().toString("yyyy-MM-dd"),
+                "expiry_date": self.exp_date.date().toString("yyyy-MM-dd")
+            }
+
+        self.items_to_move.append(item_entry)
         self.update_summary()
 
     def handle_submit(self):

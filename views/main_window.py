@@ -10,6 +10,7 @@ from views.stock_operations_view import StockOperationsView
 from views.reports_view import ReportsView
 from views.user_management_view import UserManagementView
 from views.settings_view import SettingsView
+from views.purchase_view import PurchaseView
 from views.locations_view import LocationsView
 
 from controllers.dashboard_controller import DashboardController
@@ -20,6 +21,8 @@ from controllers.report_controller import ReportController
 from controllers.user_controller import UserController
 
 from utils.auth import AuthManager
+from models.batch import Batch
+from views.expiry_alarm_dialog import ExpiryAlarmDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -30,6 +33,18 @@ class MainWindow(QMainWindow):
 
         self.setup_ui()
         self.load_dashboard()
+        self.check_expiry_alarm()
+
+    def check_expiry_alarm(self):
+        batch_model = Batch()
+        expired = batch_model.get_expired()
+        soon = batch_model.get_expiring_soon(6)
+
+        if expired or soon:
+            # Play alarm (simulated by popup and potential sound integration)
+            # In a real desktop app, we'd use QSoundEffect
+            dialog = ExpiryAlarmDialog(expired, soon, self)
+            dialog.exec()
 
     def setup_ui(self):
         main_widget = QWidget()
@@ -58,6 +73,7 @@ class MainWindow(QMainWindow):
         self.create_nav_button("stock_out", "الصادر (صرف)", "fa5s.file-export")
         self.create_nav_button("suppliers", "الموردين", "fa5s.truck")
         self.create_nav_button("locations", "المواقع", "fa5s.map-marker-alt")
+        self.create_nav_button("purchase", "المشتريات", "fa5s.shopping-cart")
         self.create_nav_button("reports", "التقارير", "fa5s.file-alt")
         self.create_nav_button("users", "المستخدمين", "fa5s.users")
         self.create_nav_button("settings", "الإعدادات", "fa5s.cog")
@@ -143,6 +159,8 @@ class MainWindow(QMainWindow):
             view = SettingsView()
         elif page_id == "locations":
             view = LocationsView()
+        elif page_id == "purchase":
+            view = PurchaseView()
 
         self.animate_page_switch(view)
 

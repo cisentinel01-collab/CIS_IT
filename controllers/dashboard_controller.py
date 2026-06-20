@@ -61,7 +61,16 @@ class DashboardController:
             "total_in": total_in,
             "total_out": total_out,
             "top_item": top_item_name,
-            "top_supplier": top_supplier_name
+            "top_supplier": top_supplier_name,
+            "expiring_count": len(db.execute_query("SELECT id FROM batches WHERE expiry_date <= CURRENT_DATE + INTERVAL '6 months' AND expiry_date >= CURRENT_DATE AND quantity > 0")),
+            "expired_count": len(db.execute_query("SELECT id FROM batches WHERE expiry_date < CURRENT_DATE AND quantity > 0")),
+            "reorder_count": len(db.execute_query("SELECT id FROM items WHERE current_stock < min_stock AND is_deleted = 0")),
+            "reorder_items": db.execute_query("""
+                SELECT i.name, i.current_stock, i.min_stock, s.name as supplier_name, s.phone as supplier_phone
+                FROM items i
+                LEFT JOIN suppliers s ON i.supplier_id = s.id
+                WHERE i.current_stock < i.min_stock AND i.is_deleted = 0
+            """)
         }
 
     def get_recent_activities(self):

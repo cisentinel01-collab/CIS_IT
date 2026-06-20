@@ -5,7 +5,7 @@ class User(BaseModel):
     table_name = "users"
 
     def authenticate(self, username, password):
-        query = "SELECT * FROM users WHERE username = ? AND is_active = 1"
+        query = "SELECT * FROM users WHERE username = %s AND is_active = 1"
         results = self.db.execute_query(query, (username,))
         if results:
             user = results[0]

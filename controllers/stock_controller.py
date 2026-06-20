@@ -22,7 +22,7 @@ class StockController:
         prefix = "IN" if type == "IN" else "OUT"
         timestamp = datetime.datetime.now().strftime("%Y%m%d")
 
-        query = "SELECT COUNT(*) as count FROM movements WHERE type = ? AND date LIKE ?"
+        query = "SELECT COUNT(*) as count FROM movements WHERE type = %s AND date LIKE %s"
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         res = self.movement_model.db.execute_query(query, (type, f"{today}%"))
         seq = (res[0]['count'] if res else 0) + 1

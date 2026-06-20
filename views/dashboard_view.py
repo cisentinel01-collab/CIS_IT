@@ -27,9 +27,10 @@ class DashboardView(QWidget):
         cards_layout.setSpacing(20)
 
         self.add_card(cards_layout, "إجمالي الأصناف", str(stats['total_items']), "fa5s.boxes", "#1a2a6c", 0, 0)
-        self.add_card(cards_layout, "قيمة المخزن الإجمالية", f"{stats['total_value']:,.2f}", "fa5s.money-bill-wave", "#27ae60", 0, 1)
-        self.add_card(cards_layout, "أصناف منخفضة", str(stats['low_stock']), "fa5s.exclamation-triangle", "#e74c3c", 0, 2)
-        self.add_card(cards_layout, "عدد الموردين", str(stats['suppliers_count']), "fa5s.truck", "#f39c12", 0, 3)
+        self.add_card(cards_layout, "قيمة المخزن", f"{stats['total_value']:,.2f}", "fa5s.money-bill-wave", "#27ae60", 0, 1)
+        self.add_card(cards_layout, "نواقص (إعادة طلب)", str(stats['reorder_count']), "fa5s.shopping-cart", "#e74c3c", 0, 2)
+        self.add_card(cards_layout, "أصناف منتهية", str(stats['expired_count']), "fa5s.calendar-times", "#c0392b", 0, 3)
+        self.add_card(cards_layout, "تنتهي قريباً", str(stats['expiring_count']), "fa5s.calendar-day", "#f39c12", 0, 4)
 
         main_layout.addLayout(cards_layout)
 
@@ -75,6 +76,28 @@ class DashboardView(QWidget):
                 ss_layout.addLayout(i_layout)
         ss_layout.addStretch()
         details_layout.addWidget(stock_status_frame, 1)
+
+        # Reorder Suggestions
+        reorder_frame = QFrame()
+        reorder_frame.setObjectName("Card")
+        re_layout = QVBoxLayout(reorder_frame)
+        re_title = QLabel("مقترحات إعادة الطلب")
+        re_title.setObjectName("CardTitle")
+        re_layout.addWidget(re_title)
+
+        re_table = QTableWidget()
+        re_table.setColumnCount(4)
+        re_table.setHorizontalHeaderLabels(["الصنف", "المخزون", "الحد الأدنى", "المورد"])
+        re_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        re_table.verticalHeader().setVisible(False)
+        re_table.setRowCount(len(stats['reorder_items']))
+        for r, item in enumerate(stats['reorder_items']):
+            re_table.setItem(r, 0, QTableWidgetItem(item['name']))
+            re_table.setItem(r, 1, QTableWidgetItem(str(item['current_stock'])))
+            re_table.setItem(r, 2, QTableWidgetItem(str(item['min_stock'])))
+            re_table.setItem(r, 3, QTableWidgetItem(item['supplier_name'] or "N/A"))
+        re_layout.addWidget(re_table)
+        details_layout.addWidget(reorder_frame, 2)
 
         # Recent Activity
         activity_frame = QFrame()

@@ -190,10 +190,17 @@ class ItemDialog(QDialog):
         for loc in locations:
             self.location_combo.addItem(loc['name'], loc['id'])
 
+        self.supplier_combo = QComboBox()
+        from models.supplier import Supplier
+        suppliers = Supplier().get_all()
+        for s in suppliers:
+            self.supplier_combo.addItem(s['name'], s['id'])
+
         layout.addRow("كود الصنف:", code_row)
         layout.addRow("اسم الصنف:", self.name_input)
         layout.addRow("الفئة:", self.category_input)
         layout.addRow("الوحدة:", self.unit_input)
+        layout.addRow("المورد الافتراضي:", self.supplier_combo)
         layout.addRow("موقع التخزين:", self.location_combo)
 
         min_stock_layout = QHBoxLayout()
@@ -226,6 +233,10 @@ class ItemDialog(QDialog):
             index = self.location_combo.findData(self.item_data['location_id'])
             if index >= 0:
                 self.location_combo.setCurrentIndex(index)
+        if self.item_data.get('supplier_id'):
+            index = self.supplier_combo.findData(self.item_data['supplier_id'])
+            if index >= 0:
+                self.supplier_combo.setCurrentIndex(index)
 
     def accept(self):
         from utils.validator import Validator
@@ -242,5 +253,6 @@ class ItemDialog(QDialog):
             "category": self.category_input.text(),
             "unit": self.unit_input.text(),
             "location_id": self.location_combo.currentData(),
+            "supplier_id": self.supplier_combo.currentData(),
             "min_stock": self.min_stock_input.value()
         }

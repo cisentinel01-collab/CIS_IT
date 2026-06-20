@@ -1,8 +1,18 @@
+import os
 from models.user import User
 from database.db_manager import DBManager
 
 def migrate():
     db = DBManager()
+
+    # Initialize Schema if needed
+    schema_path = "database/schema_pg.sql"
+    if os.path.exists(schema_path):
+        print("Initializing PostgreSQL schema...")
+        with open(schema_path, "r", encoding="utf-8") as f:
+            sql = f.read()
+            db.execute_query(sql, commit=True)
+
     user_model = User()
 
     # Requirements:

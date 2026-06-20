@@ -58,6 +58,9 @@ class SuppliersView(QWidget):
             btns_layout = QHBoxLayout(btns_widget)
             btns_layout.setContentsMargins(2, 2, 2, 2)
 
+            details_btn = QPushButton("تفاصيل")
+            details_btn.clicked.connect(lambda _, supplier=s: self.show_details(supplier))
+
             edit_btn = QPushButton("تعديل")
             edit_btn.clicked.connect(lambda _, supplier=s: self.show_edit_dialog(supplier))
 
@@ -67,9 +70,17 @@ class SuppliersView(QWidget):
             delete_btn.setStyleSheet("background-color: #e74c3c; border-radius: 5px;")
             delete_btn.clicked.connect(lambda _, supplier=s: self.handle_delete(supplier))
 
+            btns_layout.addWidget(details_btn)
             btns_layout.addWidget(edit_btn)
             btns_layout.addWidget(delete_btn)
             self.table.setCellWidget(row, 5, btns_widget)
+
+    def show_details(self, s):
+        stats = self.controller.model.get_stats(s['id'])
+        products = self.controller.model.get_products(s['id'])
+        from views.supplier_details_dialog import SupplierDetailsDialog
+        dialog = SupplierDetailsDialog(s, stats, products, self)
+        dialog.exec()
 
     def handle_delete(self, s):
         from utils.auth import AuthManager

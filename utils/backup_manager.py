@@ -1,17 +1,55 @@
-import shutil
 import os
-import datetime
+import subprocess
+from datetime import datetime
 
 class BackupManager:
-    @staticmethod
-    def create_backup(db_path="database/wms_v2.db", backup_dir="backups"):
-        os.makedirs(backup_dir, exist_ok=True)
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = os.path.join(backup_dir, f"backup_{timestamp}.db")
-        shutil.copy2(db_path, backup_path)
-        return backup_path
+    def __init__(self):
+        self.backup_dir = "backups"
+        os.makedirs(self.backup_dir, exist_ok=True)
 
-    @staticmethod
-    def restore_backup(backup_path, db_path="database/wms_v2.db"):
-        shutil.copy2(backup_path, db_path)
-        return True
+        self.config = {
+            'dbname': 'wms_erp',
+            'user': 'wms_user',
+            'password': 'wms_pass',
+            'host': 'localhost'
+        }
+
+    def create_backup(self):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"backup_{timestamp}.sql"
+        filepath = os.path.join(self.backup_dir, filename)
+
+        env = os.environ.copy()
+        env['PGPASSWORD'] = self.config['password']
+
+        try:
+            cmd = [
+                'pg_dump',
+                '-h', self.config['host'],
+                '-U', self.config['user'],
+                '-d', self.config['dbname'],
+                '-f', filepath
+            ]
+            subprocess.run(cmd, env=env, check=True)
+            return filepath
+        except Exception as e:
+            print(f"Backup failed: {e}")
+            return None
+
+    def restore_backup(self, filepath):
+        env = os.environ.copy()
+        env['PGPASSWORD'] = self.config['password']
+
+        try:
+            cmd = [
+                'psql',
+                '-h', self.config['host'],
+                '-U', self.config['user'],
+                '-d', self.config['dbname'],
+                '-f', filepath
+            ]
+            subprocess.run(cmd, env=env, check=True)
+            return True
+        except Exception as e:
+            print(f"Restore failed: {e}")
+            return False

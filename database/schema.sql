@@ -1,4 +1,4 @@
--- WMS Database Schema
+-- WMS Database Schema (ERP Upgrade)
 
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     full_name TEXT NOT NULL,
-    role TEXT NOT NULL, -- 'admin', 'warehouse_keeper', 'supervisor'
+    role TEXT NOT NULL, -- 'admin', 'warehouse_manager', 'follow_up'
     job_title TEXT,
     department TEXT,
     status TEXT DEFAULT 'active',
@@ -42,13 +42,27 @@ CREATE TABLE IF NOT EXISTS items (
     category TEXT,
     unit TEXT,
     location_id INTEGER,
-    min_stock INTEGER DEFAULT 0,
+    supplier_id INTEGER, -- Link every product to a supplier
+    min_stock INTEGER DEFAULT 0, -- minimum_quantity
     current_stock INTEGER DEFAULT 0,
     image_path TEXT,
     description TEXT,
     is_deleted INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (location_id) REFERENCES locations(id)
+    FOREIGN KEY (location_id) REFERENCES locations(id),
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+);
+
+-- Batches Table
+CREATE TABLE IF NOT EXISTS batches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL,
+    batch_number TEXT NOT NULL,
+    quantity INTEGER DEFAULT 0,
+    production_date DATE,
+    expiry_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES items(id)
 );
 
 -- Stock Movements (In/Out)
@@ -76,9 +90,35 @@ CREATE TABLE IF NOT EXISTS movement_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     movement_id INTEGER NOT NULL,
     item_id INTEGER NOT NULL,
+    batch_id INTEGER, -- Linked to a specific batch
     quantity INTEGER NOT NULL,
     price REAL DEFAULT 0, -- For IN
     FOREIGN KEY (movement_id) REFERENCES movements(id),
+    FOREIGN KEY (item_id) REFERENCES items(id),
+    FOREIGN KEY (batch_id) REFERENCES batches(id)
+);
+
+-- Purchase Orders
+CREATE TABLE IF NOT EXISTS purchase_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    supplier_id INTEGER NOT NULL,
+    po_number TEXT UNIQUE NOT NULL,
+    date DATE DEFAULT CURRENT_DATE,
+    status TEXT DEFAULT 'pending', -- 'pending', 'received', 'cancelled'
+    total REAL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+);
+
+-- Purchase Order Items
+CREATE TABLE IF NOT EXISTS po_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    po_id INTEGER NOT NULL,
+    item_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    unit_price REAL DEFAULT 0,
+    total REAL DEFAULT 0,
+    FOREIGN KEY (po_id) REFERENCES purchase_orders(id),
     FOREIGN KEY (item_id) REFERENCES items(id)
 );
 

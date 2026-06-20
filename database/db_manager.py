@@ -1,4 +1,5 @@
-import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import os
 
 class DBManager:
@@ -7,28 +8,41 @@ class DBManager:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(DBManager, cls).__new__(cls)
-            cls._instance.db_path = "database/wms_v2.db"
-            cls._instance._init_db()
+            cls._instance.config = {
+                'dbname': 'wms_erp',
+                'user': 'wms_user',
+                'password': 'wms_pass',
+                'host': 'localhost',
+                'port': '5432'
+            }
         return cls._instance
 
-    def _init_db(self):
-        conn = sqlite3.connect(self.db_path)
-        with open("database/schema.sql", "r", encoding="utf-8") as f:
-            conn.executescript(f.read())
-        conn.commit()
-        conn.close()
+    def get_connection(self):
+        return psycopg2.connect(**self.config)
 
     def execute_query(self, query, params=(), commit=False):
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        conn = self.get_connection()
         try:
-            cursor.execute(query, params)
-            if commit:
-                conn.commit()
-                return cursor.lastrowid
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute(query, params)
+                if commit:
+                    conn.commit()
+                    # For PostgreSQL, we might need a returning clause or use cursor.fetchone() for last row id
+                    if "INSERT" in query.upper() and "RETURNING" in query.upper():
+                        res = cursor.fetchone()
+                        return res['id'] if res else None
+                    return None
 
-            # Convert sqlite3.Row to dict to avoid PySide6 issues
-            return [dict(row) for row in cursor.fetchall()]
+                return [dict(row) for row in cursor.fetchall()]
+        except Exception as e:
+            if commit:
+                conn.rollback()
+            raise e
         finally:
             conn.close()
+
+    def execute_insert(self, query, params=()):
+        """Helper for inserts that return ID"""
+        if "RETURNING id" not in query.upper():
+            query += " RETURNING id"
+        return self.execute_query(query, params, commit=True)

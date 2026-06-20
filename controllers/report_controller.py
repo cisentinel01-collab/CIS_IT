@@ -72,3 +72,19 @@ class ReportController:
         filename = f"reports/audit_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
         self.pdf_gen.generate_report(filename, "سجل نشاط المستخدمين", headers, data, self.settings_model.get_settings())
         return filename
+
+    def export_expiry_to_pdf(self, expired_only=False):
+        from models.batch import Batch
+        batch_model = Batch()
+        if expired_only:
+            batches = batch_model.get_expired()
+            title = "تقرير الأصناف منتهية الصلاحية"
+        else:
+            batches = batch_model.get_expiring_soon(6)
+            title = "تقرير الأصناف التي ستنتهي قريباً"
+
+        headers = ["الصنف", "التشغيلة", "الكمية", "تاريخ الانتهاء"]
+        data = [[b['item_name'], b['batch_number'], b['quantity'], str(b['expiry_date'])] for b in batches]
+        filename = f"reports/expiry_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
+        self.pdf_gen.generate_report(filename, title, headers, data, self.settings_model.get_settings())
+        return filename
