@@ -1,371 +1,376 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
-                             QTableWidgetItem, QPushButton, QLineEdit, QLabel,
-                             QHeaderView, QComboBox, QSpinBox, QFormLayout,
-                             QGroupBox, QMessageBox, QTabWidget, QDoubleSpinBox, QInputDialog, QDateEdit)
+  QTableWidgetItem, QPushButton, QLineEdit, QLabel,
+  QHeaderView, QComboBox, QSpinBox, QFormLayout,
+  QGroupBox, QMessageBox, QTabWidget, QDoubleSpinBox, QInputDialog, QDateEdit)
 from PySide6.QtCore import Qt, Signal
 import qtawesome as qta
 from models.item import Item
 from models.supplier import Supplier
 
 class StockOperationsView(QWidget):
-    data_changed = Signal()
+ data_changed = Signal()
 
-    def __init__(self, controller, op_type="IN"):
-        super().__init__()
-        self.controller = controller
-        self.op_type = op_type # "IN" or "OUT"
-        self.items_to_move = []
-        self.setup_ui()
+ def __init__(self, controller, op_type="IN"):
+ super().__init__()
+ self.controller = controller
+ self.op_type = op_type # "IN" or "OUT"
+ self.items_to_move = []
+ self.setup_ui()
 
-    def setup_ui(self):
-        self.main_layout = QVBoxLayout(self)
-        self.tabs = QTabWidget()
-        self.main_layout.addWidget(self.tabs)
+ def setup_ui(self):
+ self.main_layout = QVBoxLayout(self)
+ self.tabs = QTabWidget()
+ self.main_layout.addWidget(self.tabs)
 
-        # Operation Tab
-        self.op_tab = QWidget()
-        self.setup_operation_tab()
-        self.tabs.addTab(self.op_tab, "تنفيذ عملية")
+ # Operation Tab
+ self.op_tab = QWidget()
+ self.setup_operation_tab()
+ self.tabs.addTab(self.op_tab, "تنفيذ عملية")
 
-        # History Tab
-        self.history_tab = QWidget()
-        self.setup_history_tab()
-        self.tabs.addTab(self.history_tab, "السجل")
+ # History Tab
+ self.history_tab = QWidget()
+ self.setup_history_tab()
+ self.tabs.addTab(self.history_tab, "السجل")
 
-    def setup_operation_tab(self):
-        layout = QVBoxLayout(self.op_tab)
-        layout.setContentsMargins(20, 20, 20, 20)
+ def setup_operation_tab(self):
+ layout = QVBoxLayout(self.op_tab)
+ layout.setContentsMargins(20, 20, 20, 20)
 
-        # Header Info
-        info_group = QGroupBox("بيانات العملية")
-        info_layout = QFormLayout(info_group)
+ # Header Info
+ info_group = QGroupBox("بيانات العملية")
+ info_layout = QFormLayout(info_group)
 
-        self.ref_input = QLineEdit()
-        self.ref_input.setReadOnly(True)
-        self.ref_input.setPlaceholderText("سيتم التوليد تلقائياً")
-        self.ref_input.setText(self.controller.generate_invoice_no(self.op_type))
-        info_layout.addRow("رقم الفاتورة/العملية:", self.ref_input)
+ self.ref_input = QLineEdit()
+ self.ref_input.setReadOnly(True)
+ self.ref_input.setPlaceholderText("سيتم التوليد تلقائياً")
+ self.ref_input.setText(self.controller.generate_invoice_no(self.op_type))
+ info_layout.addRow("رقم الفاتورة/العملية:", self.ref_input)
 
-        if self.op_type == "IN":
-            self.supplier_combo = QComboBox()
-            self.supplier_combo.setToolTip("اختر المورد الذي تم استلام الأصناف منه")
-            self.load_suppliers()
-            info_layout.addRow("المورد:", self.supplier_combo)
+ if self.op_type == "IN":
+ self.supplier_combo = QComboBox()
+ self.supplier_combo.setToolTip("اختر المورد الذي تم استلام الأصناف منه")
+ self.load_suppliers()
+ info_layout.addRow("المورد:", self.supplier_combo)
 
-            self.receiver_input = QLineEdit()
-            self.receiver_input.setPlaceholderText("أدخل اسم الموظف المستلم")
-            from utils.validator import Validator
-            Validator.setup_strict_validation(self.receiver_input, "name")
-            info_layout.addRow("اسم المستلم:", self.receiver_input)
-        else:
-            self.issuing_entity = QLineEdit()
-            self.issuing_entity.setPlaceholderText("مثال: قسم الصيانة، العميل...")
-            from utils.validator import Validator
-            Validator.setup_strict_validation(self.issuing_entity, "name")
-            info_layout.addRow("الجهة المستلمة:", self.issuing_entity)
+ self.receiver_input = QLineEdit()
+ self.receiver_input.setPlaceholderText("أدخل اسم الموظف المستلم")
+ from utils.validator import Validator
+ Validator.setup_strict_validation(self.receiver_input, "name")
+ info_layout.addRow("اسم المستلم:", self.receiver_input)
+ else:
+ self.issuing_entity = QLineEdit()
+ self.issuing_entity.setPlaceholderText("مثال: قسم الصيانة، العميل...")
+ from utils.validator import Validator
+ Validator.setup_strict_validation(self.issuing_entity, "name")
+ info_layout.addRow("الجهة المستلمة:", self.issuing_entity)
 
-            self.receiver_name = QLineEdit()
-            self.receiver_name.setPlaceholderText("اسم الشخص الذي تسلم العهدة")
-            Validator.setup_strict_validation(self.receiver_name, "name")
-            info_layout.addRow("اسم الشخص المستلم:", self.receiver_name)
+ self.receiver_name = QLineEdit()
+ self.receiver_name.setPlaceholderText("اسم الشخص الذي تسلم العهدة")
+ Validator.setup_strict_validation(self.receiver_name, "name")
+ info_layout.addRow("اسم الشخص المستلم:", self.receiver_name)
 
-            self.reason_input = QLineEdit()
-            self.reason_input.setPlaceholderText("سبب خروج الأصناف من المخزن")
-            info_layout.addRow("سبب الصرف:", self.reason_input)
+ self.reason_input = QLineEdit()
+ self.reason_input.setPlaceholderText("سبب خروج الأصناف من المخزن")
+ info_layout.addRow("سبب الصرف:", self.reason_input)
 
-        layout.addWidget(info_group)
+ layout.addWidget(info_group)
 
-        # Item Selector
-        selector_group = QGroupBox("إضافة أصناف")
-        selector_layout = QHBoxLayout(selector_group)
+ # Item Selector
+ selector_group = QGroupBox("إضافة أصناف")
+ selector_layout = QHBoxLayout(selector_group)
 
-        self.item_combo = QComboBox()
-        self.item_combo.setEditable(True)
-        self.item_combo.setMinimumWidth(300)
-        self.item_combo.setPlaceholderText("اختر صنف أو ابحث بالكود...")
-        self.load_items()
-        selector_layout.addWidget(QLabel("الصنف:"))
-        selector_layout.addWidget(self.item_combo)
+ self.item_combo = QComboBox()
+ self.item_combo.setEditable(True)
+ self.item_combo.setMinimumWidth(300)
+ self.item_combo.setPlaceholderText("اختر صنف أو ابحث بالكود...")
+ self.load_items()
+ selector_layout.addWidget(QLabel("الصنف:"))
+ selector_layout.addWidget(self.item_combo)
 
-        scan_item_btn = QPushButton()
-        scan_item_btn.setIcon(qta.icon("fa5s.qrcode", color="#1a2a6c"))
-        scan_item_btn.setFixedSize(40, 40)
-        scan_item_btn.setToolTip("مسح QR كود لاختيار صنف")
-        scan_item_btn.clicked.connect(self.handle_item_scan)
-        selector_layout.addWidget(scan_item_btn)
+ scan_item_btn = QPushButton()
+ scan_item_btn.setIcon(qta.icon("fa5s.qrcode", color="#1a2a6c"))
+ scan_item_btn.setFixedSize(40, 40)
+ scan_item_btn.setToolTip("مسح QR كود لاختيار صنف")
+ scan_item_btn.clicked.connect(self.handle_item_scan)
+ selector_layout.addWidget(scan_item_btn)
 
-        # Horizontal layout for QSpinBox with label
-        qty_box = QHBoxLayout()
-        qty_box.setSpacing(5)
-        self.qty_input = QSpinBox()
-        self.qty_input.setMinimum(1)
-        self.qty_input.setMaximum(1000000)
-        self.qty_input.setMinimumWidth(80)
-        qty_box.addWidget(QLabel("الكمية:"))
-        qty_box.addWidget(self.qty_input)
-        selector_layout.addLayout(qty_box)
+ # Horizontal layout for QSpinBox with label
+ qty_box = QHBoxLayout()
+ qty_box.setSpacing(5)
+ self.qty_input = QSpinBox()
+ self.qty_input.setMinimum(1)
+ self.qty_input.setMaximum(1000000)
+ self.qty_input.setMinimumWidth(80)
+ qty_box.addWidget(QLabel("الكمية:"))
+ qty_box.addWidget(self.qty_input)
+ selector_layout.addLayout(qty_box)
 
-        # Price is now supported in both IN and OUT
-        price_box = QHBoxLayout()
-        price_box.setSpacing(5)
-        self.price_input = QLineEdit()
-        self.price_input.setPlaceholderText("السعر")
-        self.price_input.setMinimumWidth(80)
-        price_box.addWidget(QLabel("السعر:"))
-        price_box.addWidget(self.price_input)
-        selector_layout.addLayout(price_box)
+ # Price is now supported in both IN and OUT
+ price_box = QHBoxLayout()
+ price_box.setSpacing(5)
+ self.price_input = QLineEdit()
+ self.price_input.setPlaceholderText("السعر")
+ self.price_input.setMinimumWidth(80)
+ price_box.addWidget(QLabel("السعر:"))
+ price_box.addWidget(self.price_input)
+ selector_layout.addLayout(price_box)
 
-        if self.op_type == "IN":
-            batch_box = QHBoxLayout()
-            self.batch_input = QLineEdit()
-            self.batch_input.setPlaceholderText("رقم التشغيلة")
-            self.prod_date = QDateEdit()
-            self.prod_date.setCalendarPopup(True)
-            from PySide6.QtCore import QDate
-            self.prod_date.setDate(QDate.currentDate())
-            self.exp_date = QDateEdit()
-            self.exp_date.setCalendarPopup(True)
-            self.exp_date.setDate(QDate.currentDate().addYears(1))
+ if self.op_type == "IN":
+ batch_box = QHBoxLayout()
+ self.batch_input = QLineEdit()
+ self.batch_input.setPlaceholderText("رقم التشغيلة")
+ self.prod_date = QDateEdit()
+ self.prod_date.setCalendarPopup(True)
+ from PySide6.QtCore import QDate
+ self.prod_date.setDate(QDate.currentDate())
+ self.exp_date = QDateEdit()
+ self.exp_date.setCalendarPopup(True)
+ self.exp_date.setDate(QDate.currentDate().addYears(1))
 
-            batch_box.addWidget(QLabel("التشغيلة:"))
-            batch_box.addWidget(self.batch_input)
-            batch_box.addWidget(QLabel("إنتاج:"))
-            batch_box.addWidget(self.prod_date)
-            batch_box.addWidget(QLabel("إنتهاء:"))
-            batch_box.addWidget(self.exp_date)
-            selector_layout.addLayout(batch_box)
+ batch_box.addWidget(QLabel("التشغيلة:"))
+ batch_box.addWidget(self.batch_input)
+ batch_box.addWidget(QLabel("إنتاج:"))
+ batch_box.addWidget(self.prod_date)
+ batch_box.addWidget(QLabel("إنتهاء:"))
+ batch_box.addWidget(self.exp_date)
+ selector_layout.addLayout(batch_box)
 
-        add_item_btn = QPushButton("إضافة")
-        add_item_btn.setObjectName("GoldButton")
-        add_item_btn.clicked.connect(self.add_item_to_list)
-        selector_layout.addWidget(add_item_btn)
+ add_item_btn = QPushButton("إضافة")
+ add_item_btn.setObjectName("GoldButton")
+ add_item_btn.clicked.connect(self.add_item_to_list)
+ selector_layout.addWidget(add_item_btn)
 
-        layout.addWidget(selector_group)
+ layout.addWidget(selector_group)
 
-        # Financials
-        fin_group = QGroupBox("الإجماليات والخصومات")
-        fin_layout = QFormLayout(fin_group)
+ # Financials
+ fin_group = QGroupBox("الإجماليات والخصومات")
+ fin_layout = QFormLayout(fin_group)
 
-        disc_box = QHBoxLayout()
-        self.discount_input = QSpinBox()
-        self.discount_input.setSuffix("%")
-        self.discount_input.setMinimumWidth(100)
-        self.discount_input.valueChanged.connect(self.update_summary)
-        disc_box.addWidget(self.discount_input)
-        disc_box.addStretch()
+ disc_box = QHBoxLayout()
+ self.discount_input = QSpinBox()
+ self.discount_input.setSuffix("%")
+ self.discount_input.setMinimumWidth(100)
+ self.discount_input.valueChanged.connect(self.update_summary)
+ disc_box.addWidget(self.discount_input)
+ disc_box.addStretch()
 
-        fin_layout.addRow("نسبة الخصم:", disc_box)
+ fin_layout.addRow("نسبة الخصم:", disc_box)
 
-        self.summary_label = QLabel("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
-        self.summary_label.setObjectName("GoldSummaryLabel")
-        fin_layout.addRow(self.summary_label)
-        layout.addWidget(fin_group)
+ self.summary_label = QLabel("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
+ self.summary_label.setObjectName("GoldSummaryLabel")
+ fin_layout.addRow(self.summary_label)
+ layout.addWidget(fin_group)
 
-        # Selected Items Table
-        self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        headers = ["الكود", "الاسم", "الكمية", "السعر"]
-        self.table.setHorizontalHeaderLabels(headers)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        layout.addWidget(self.table)
+ # Selected Items Table
+ self.table = QTableWidget()
+ self.table.setColumnCount(4)
+ headers = ["الكود", "الاسم", "الكمية", "السعر"]
+ self.table.setHorizontalHeaderLabels(headers)
+ self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+ layout.addWidget(self.table)
 
-        # Submit Button
-        submit_btn = QPushButton("إتمام العملية وحفظ PDF")
-        submit_btn.setObjectName("PrimaryButton")
-        submit_btn.setFixedHeight(50)
-        submit_btn.clicked.connect(self.handle_submit)
-        layout.addWidget(submit_btn)
+ # Submit Button
+ submit_btn = QPushButton("إتمام العملية وحفظ PDF")
+ submit_btn.setObjectName("PrimaryButton")
+ submit_btn.setFixedHeight(50)
+ from utils.auth import AuthManager
+ if not AuthManager.has_permission(self.op_type.lower(), 'submit'):
+ submit_btn.setEnabled(False)
+ submit_btn.setToolTip("لا تملك صلاحية تنفيذ هذه العملية")
 
-    def setup_history_tab(self):
-        layout = QVBoxLayout(self.history_tab)
-        layout.setContentsMargins(20, 20, 20, 20)
+ submit_btn.clicked.connect(self.handle_submit)
+ layout.addWidget(submit_btn)
 
-        self.history_table = QTableWidget()
-        self.history_table.setColumnCount(5)
-        self.history_table.setHorizontalHeaderLabels(["التاريخ", "رقم الفاتورة", "المورد/المستلم", "الإجمالي", "إجراءات"])
-        self.history_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
-        self.history_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
-        self.history_table.horizontalHeader().setDefaultSectionSize(140)
-        self.history_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.history_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.history_table.doubleClicked.connect(self.handle_history_double_click)
-        layout.addWidget(self.history_table)
+ def setup_history_tab(self):
+ layout = QVBoxLayout(self.history_tab)
+ layout.setContentsMargins(20, 20, 20, 20)
 
-        refresh_btn = QPushButton("تحديث السجل")
-        refresh_btn.clicked.connect(self.load_history)
-        layout.addWidget(refresh_btn)
+ self.history_table = QTableWidget()
+ self.history_table.setColumnCount(5)
+ self.history_table.setHorizontalHeaderLabels(["التاريخ", "رقم الفاتورة", "المورد/المستلم", "الإجمالي", "إجراءات"])
+ self.history_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+ self.history_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+ self.history_table.horizontalHeader().setDefaultSectionSize(140)
+ self.history_table.setEditTriggers(QTableWidget.NoEditTriggers)
+ self.history_table.setSelectionBehavior(QTableWidget.SelectRows)
+ self.history_table.doubleClicked.connect(self.handle_history_double_click)
+ layout.addWidget(self.history_table)
 
-        self.load_history()
+ refresh_btn = QPushButton("تحديث السجل")
+ refresh_btn.clicked.connect(self.load_history)
+ layout.addWidget(refresh_btn)
 
-    def load_history(self):
-        history = self.controller.get_movement_history(type=self.op_type)
-        self.history_table.setRowCount(0)
-        for h in history:
-            row = self.history_table.rowCount()
-            self.history_table.insertRow(row)
-            party = h['supplier_name'] if self.op_type == 'IN' else h['receiver_name']
-            self.history_table.setItem(row, 0, QTableWidgetItem(h['date']))
-            self.history_table.setItem(row, 1, QTableWidgetItem(h['reference_no']))
-            self.history_table.setItem(row, 2, QTableWidgetItem(party or ""))
-            self.history_table.setItem(row, 3, QTableWidgetItem(f"{h['final_total']:,.2f}"))
+ self.load_history()
 
-            view_pdf_btn = QPushButton("عرض PDF")
-            view_pdf_btn.clicked.connect(lambda _, m_id=h['id']: self.view_movement_pdf(m_id))
-            self.history_table.setCellWidget(row, 4, view_pdf_btn)
+ def load_history(self):
+ history = self.controller.get_movement_history(type=self.op_type)
+ self.history_table.setRowCount(0)
+ for h in history:
+ row = self.history_table.rowCount()
+ self.history_table.insertRow(row)
+ party = h['supplier_name'] if self.op_type == 'IN' else h['receiver_name']
+ self.history_table.setItem(row, 0, QTableWidgetItem(h['date']))
+ self.history_table.setItem(row, 1, QTableWidgetItem(h['reference_no']))
+ self.history_table.setItem(row, 2, QTableWidgetItem(party or ""))
+ self.history_table.setItem(row, 3, QTableWidgetItem(f"{h['final_total']:,.2f}"))
 
-    def handle_history_double_click(self, index):
-        # Double check we have the row index correctly
-        row = index.row()
-        history = self.controller.get_movement_history(type=self.op_type)
-        if row < len(history):
-            m_id = history[row]['id']
-            self.view_movement_pdf(m_id)
+ view_pdf_btn = QPushButton("عرض PDF")
+ view_pdf_btn.clicked.connect(lambda _, m_id=h['id']: self.view_movement_pdf(m_id))
+ self.history_table.setCellWidget(row, 4, view_pdf_btn)
 
-    def view_movement_pdf(self, movement_id):
-        path = self.controller.generate_movement_pdf(movement_id)
-        from views.print_preview import PrintPreviewDialog
-        dialog = PrintPreviewDialog(path, self)
-        dialog.exec()
+ def handle_history_double_click(self, index):
+ # Double check we have the row index correctly
+ row = index.row()
+ history = self.controller.get_movement_history(type=self.op_type)
+ if row < len(history):
+ m_id = history[row]['id']
+ self.view_movement_pdf(m_id)
 
-    def load_suppliers(self):
-        self.supplier_combo.clear()
-        suppliers = Supplier().get_all()
-        for s in suppliers:
-            self.supplier_combo.addItem(s['name'], s['id'])
+ def view_movement_pdf(self, movement_id):
+ path = self.controller.generate_movement_pdf(movement_id)
+ from views.print_preview import PrintPreviewDialog
+ dialog = PrintPreviewDialog(path, self)
+ dialog.exec()
 
-    def update_summary(self):
-        subtotal = sum(item['quantity'] * item.get('price', 0) for item in self.items_to_move)
-        discount_pct = self.discount_input.value()
-        discount_amt = (subtotal * discount_pct) / 100
-        final = subtotal - discount_amt
-        self.summary_label.setText(f"المجموع: {subtotal:,.2f} | الخصم: {discount_amt:,.2f} | الإجمالي: {final:,.2f}")
+ def load_suppliers(self):
+ self.supplier_combo.clear()
+ suppliers = Supplier().get_all()
+ for s in suppliers:
+ self.supplier_combo.addItem(s['name'], s['id'])
 
-    def handle_item_scan(self):
-        code, ok = QInputDialog.getText(self, "مسح QR", "يرجى مسح كود QR الصنف:")
-        if ok and code:
-            for i in range(self.item_combo.count()):
-                item_data = self.item_combo.itemData(i)
-                if item_data and (item_data['code'] == code):
-                    self.item_combo.setCurrentIndex(i)
-                    return
-            QMessageBox.warning(self, "تنبيه", "الصنف غير موجود في القائمة")
+ def update_summary(self):
+ subtotal = sum(item['quantity'] * item.get('price', 0) for item in self.items_to_move)
+ discount_pct = self.discount_input.value()
+ discount_amt = (subtotal * discount_pct) / 100
+ final = subtotal - discount_amt
+ self.summary_label.setText(f"المجموع: {subtotal:,.2f} | الخصم: {discount_amt:,.2f} | الإجمالي: {final:,.2f}")
 
-    def load_items(self):
-        self.item_combo.clear()
-        items = Item().get_all()
-        for i in items:
-            self.item_combo.addItem(f"{i['code']} - {i['name']} (المخزون: {i['current_stock']})", i)
+ def handle_item_scan(self):
+ code, ok = QInputDialog.getText(self, "مسح QR", "يرجى مسح كود QR الصنف:")
+ if ok and code:
+ for i in range(self.item_combo.count()):
+ item_data = self.item_combo.itemData(i)
+ if item_data and (item_data['code'] == code):
+  self.item_combo.setCurrentIndex(i)
+  return
+ QMessageBox.warning(self, "تنبيه", "الصنف غير موجود في القائمة")
 
-    def add_item_to_list(self):
-        item_data = self.item_combo.currentData()
-        if not item_data:
-            QMessageBox.warning(self, "تنبيه", "يرجى اختيار صنف أولاً")
-            return
-        qty = self.qty_input.value()
-        if qty <= 0: return
+ def load_items(self):
+ self.item_combo.clear()
+ items = Item().get_all()
+ for i in items:
+ self.item_combo.addItem(f"{i['code']} - {i['name']} (المخزون: {i['current_stock']})", i)
 
-        if self.op_type == "OUT":
-            current_item = Item().get_by_id(item_data['id'])
-            if qty > current_item['current_stock']:
-                QMessageBox.warning(self, "تنبيه المخزون",
-                                  f"الكمية المطلوبة ({qty}) أكبر من المخزون المتاح ({current_item['current_stock']})")
-                return
+ def add_item_to_list(self):
+ item_data = self.item_combo.currentData()
+ if not item_data:
+ QMessageBox.warning(self, "تنبيه", "يرجى اختيار صنف أولاً")
+ return
+ qty = self.qty_input.value()
+ if qty <= 0: return
 
-        try:
-            price_text = self.price_input.text()
-            if not price_text:
-                QMessageBox.warning(self, "تنبيه", "يرجى إدخال السعر")
-                return
-            price = float(price_text)
-        except ValueError:
-            QMessageBox.warning(self, "خطأ", "السعر يجب أن يكون رقماً")
-            return
+ if self.op_type == "OUT":
+ current_item = Item().get_by_id(item_data['id'])
+ if qty > current_item['current_stock']:
+ QMessageBox.warning(self, "تنبيه المخزون",
+   f"الكمية المطلوبة ({qty}) أكبر من المخزون المتاح ({current_item['current_stock']})")
+ return
 
-        row = self.table.rowCount()
-        self.table.insertRow(row)
-        self.table.setItem(row, 0, QTableWidgetItem(item_data['code']))
-        self.table.setItem(row, 1, QTableWidgetItem(item_data['name']))
-        self.table.setItem(row, 2, QTableWidgetItem(str(qty)))
-        self.table.setItem(row, 3, QTableWidgetItem(str(price)))
+ try:
+ price_text = self.price_input.text()
+ if not price_text:
+ QMessageBox.warning(self, "تنبيه", "يرجى إدخال السعر")
+ return
+ price = float(price_text)
+ except ValueError:
+ QMessageBox.warning(self, "خطأ", "السعر يجب أن يكون رقماً")
+ return
 
-        item_entry = {
-            "item_id": item_data['id'],
-            "item_name": item_data['name'],
-            "item_code": item_data['code'],
-            "quantity": qty,
-            "price": price,
-            "unit": item_data.get('unit', '')
-        }
+ row = self.table.rowCount()
+ self.table.insertRow(row)
+ self.table.setItem(row, 0, QTableWidgetItem(item_data['code']))
+ self.table.setItem(row, 1, QTableWidgetItem(item_data['name']))
+ self.table.setItem(row, 2, QTableWidgetItem(str(qty)))
+ self.table.setItem(row, 3, QTableWidgetItem(str(price)))
 
-        if self.op_type == "IN":
-            item_entry["batch_info"] = {
-                "batch_number": self.batch_input.text() or "DEFAULT",
-                "production_date": self.prod_date.date().toString("yyyy-MM-dd"),
-                "expiry_date": self.exp_date.date().toString("yyyy-MM-dd")
-            }
+ item_entry = {
+ "item_id": item_data['id'],
+ "item_name": item_data['name'],
+ "item_code": item_data['code'],
+ "quantity": qty,
+ "price": price,
+ "unit": item_data.get('unit', '')
+ }
 
-        self.items_to_move.append(item_entry)
-        self.update_summary()
+ if self.op_type == "IN":
+ item_entry["batch_info"] = {
+ "batch_number": self.batch_input.text() or "DEFAULT",
+ "production_date": self.prod_date.date().toString("yyyy-MM-dd"),
+ "expiry_date": self.exp_date.date().toString("yyyy-MM-dd")
+ }
 
-    def handle_submit(self):
-        if not self.items_to_move:
-            QMessageBox.warning(self, "تنبيه", "يرجى إضافة أصناف أولاً")
-            return
+ self.items_to_move.append(item_entry)
+ self.update_summary()
 
-        try:
-            ref_no = self.controller.generate_invoice_no(self.op_type)
-            self.ref_input.setText(ref_no)
+ def handle_submit(self):
+ if not self.items_to_move:
+ QMessageBox.warning(self, "تنبيه", "يرجى إضافة أصناف أولاً")
+ return
 
-            movement_data = {
-                "reference_no": ref_no,
-                "notes": "",
-                "discount_percent": self.discount_input.value()
-            }
+ try:
+ ref_no = self.controller.generate_invoice_no(self.op_type)
+ self.ref_input.setText(ref_no)
 
-            from utils.validator import Validator
-            from utils.notifications import NotificationManager
-            if self.op_type == "IN":
-                if not Validator.is_not_empty(self.receiver_input.text()):
-                    QMessageBox.warning(self, "تنبيه", "يرجى إدخال اسم المستلم")
-                    return
-                if not self.supplier_combo.currentData():
-                    QMessageBox.warning(self, "تنبيه", "يرجى اختيار المورد")
-                    return
-                movement_data["supplier_id"] = self.supplier_combo.currentData()
-                movement_data["received_by"] = self.receiver_input.text()
-                m_id, low_items = self.controller.receive_stock(movement_data, self.items_to_move)
-            else:
-                if not Validator.is_not_empty(self.issuing_entity.text()) or \
-                   not Validator.is_not_empty(self.receiver_name.text()):
-                    QMessageBox.warning(self, "تنبيه", "يرجى إدخال الجهة المستلمة واسم الشخص")
-                    return
-                movement_data["issuing_entity"] = self.issuing_entity.text()
-                movement_data["receiver_name"] = self.receiver_name.text()
-                movement_data["reason"] = self.reason_input.text()
-                m_id, low_items = self.controller.issue_stock(movement_data, self.items_to_move)
+ movement_data = {
+ "reference_no": ref_no,
+ "notes": "",
+ "discount_percent": self.discount_input.value()
+ }
 
-            msg = f"تمت العملية بنجاح. رقم الفاتورة: {ref_no}\nتم حفظ نسخة PDF في مجلد reports."
-            QMessageBox.information(self, "نجاح", msg)
+ from utils.validator import Validator
+ from utils.notifications import NotificationManager
+ if self.op_type == "IN":
+ if not Validator.is_not_empty(self.receiver_input.text()):
+  QMessageBox.warning(self, "تنبيه", "يرجى إدخال اسم المستلم")
+  return
+ if not self.supplier_combo.currentData():
+  QMessageBox.warning(self, "تنبيه", "يرجى اختيار المورد")
+  return
+ movement_data["supplier_id"] = self.supplier_combo.currentData()
+ movement_data["received_by"] = self.receiver_input.text()
+ m_id, low_items = self.controller.receive_stock(movement_data, self.items_to_move)
+ else:
+ if not Validator.is_not_empty(self.issuing_entity.text()) or \
+  not Validator.is_not_empty(self.receiver_name.text()):
+  QMessageBox.warning(self, "تنبيه", "يرجى إدخال الجهة المستلمة واسم الشخص")
+  return
+ movement_data["issuing_entity"] = self.issuing_entity.text()
+ movement_data["receiver_name"] = self.receiver_name.text()
+ movement_data["reason"] = self.reason_input.text()
+ m_id, low_items = self.controller.issue_stock(movement_data, self.items_to_move)
 
-            for item in low_items:
-                NotificationManager.error(self.window(), f"تنبيه: الصنف '{item}' وصل للحد الحرج!")
-            self.reset_form()
-            self.data_changed.emit()
-            self.load_history()
-        except Exception as e:
-            QMessageBox.critical(self, "خطأ", f"فشل إتمام العملية: {str(e)}")
+ msg = f"تمت العملية بنجاح. رقم الفاتورة: {ref_no}\nتم حفظ نسخة PDF في مجلد reports."
+ QMessageBox.information(self, "نجاح", msg)
 
-    def reset_form(self):
-        self.ref_input.setText(self.controller.generate_invoice_no(self.op_type))
-        self.table.setRowCount(0)
-        self.items_to_move = []
-        self.summary_label.setText("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
-        self.discount_input.setValue(0)
-        if self.op_type == "IN":
-            self.receiver_input.clear()
-            if hasattr(self, 'price_input'): self.price_input.clear()
-        else:
-            self.issuing_entity.clear()
-            self.receiver_name.clear()
-            self.reason_input.clear()
-        self.load_items()
+ for item in low_items:
+ NotificationManager.error(self.window(), f"تنبيه: الصنف '{item}' وصل للحد الحرج!")
+ self.reset_form()
+ self.data_changed.emit()
+ self.load_history()
+ except Exception as e:
+ QMessageBox.critical(self, "خطأ", f"فشل إتمام العملية: {str(e)}")
+
+ def reset_form(self):
+ self.ref_input.setText(self.controller.generate_invoice_no(self.op_type))
+ self.table.setRowCount(0)
+ self.items_to_move = []
+ self.summary_label.setText("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
+ self.discount_input.setValue(0)
+ if self.op_type == "IN":
+ self.receiver_input.clear()
+ if hasattr(self, 'price_input'): self.price_input.clear()
+ else:
+ self.issuing_entity.clear()
+ self.receiver_name.clear()
+ self.reason_input.clear()
+ self.load_items()

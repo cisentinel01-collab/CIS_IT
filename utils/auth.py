@@ -1,48 +1,46 @@
 class AuthManager:
-    _current_user = None
+ _current_user = None
 
-    @classmethod
-    def login(cls, username, password):
-        from models.user import User
-        user = User().authenticate(username, password)
-        if user:
-            cls._current_user = user
-            return True
-        return False
+ @classmethod
+ def login(cls, username, password):
+ from models.user import User
+ user = User().authenticate(username, password)
+ if user:
+ cls._current_user = user
+ return True
+ return False
 
-    @classmethod
-    def get_current_user(cls):
-        return cls._current_user
+ @classmethod
+ def get_current_user(cls):
+ return cls._current_user
 
-    @classmethod
-    def logout(cls):
-        cls._current_user = None
+ @classmethod
+ def logout(cls):
+ cls._current_user = None
 
-    @classmethod
-    def has_permission(cls, module, action=None):
-        if not cls._current_user:
-            return False
+ @classmethod
+ def has_permission(cls, module, action=None):
+ if not cls._current_user:
+ return False
 
-        role = cls._current_user['role']
+ role = cls._current_user['role']
 
-        # 1. Admin: Full Access to everything including 'users'
-        if role == 'admin':
-            return True
+ # 1. Admin: Full Access to everything including 'users'
+ if role == 'admin':
+ return True
 
-        # 2. مسئول المخزن (Full Operational Access, but NO 'users' module)
-        if role == 'warehouse_manager':
-            if module == 'users':
-                return False
-            return True
+ # 2. مسئول المخزن (Full access except Users and Settings)
+ if role == 'warehouse_manager':
+ if module in ['users', 'settings']:
+ return False
+ return True
 
-        # 3. المتابعة (View/Report Only)
-        if role == 'follow_up':
-            # Allow viewing dashboard and reports
-            if module in ['dashboard', 'reports']:
-                return True
-            # Allow viewing lists (Items, Suppliers, Locations) but no editing/stock ops
-            if module in ['items', 'suppliers', 'locations']:
-                return action in [None, 'view', 'export']
-            return False
+ # 3. المتابعة (Strict View Only)
+ if role == 'follow_up':
+ if action in ['add', 'edit', 'delete', 'submit', 'save', 'create']:
+ return False
+ if module in ['dashboard', 'reports', 'items', 'suppliers', 'locations', 'stock_in', 'stock_out', 'purchase']:
+ return True
+ return False
 
-        return False
+ return False
