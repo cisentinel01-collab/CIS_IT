@@ -1,5 +1,11 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QScrollArea, QWidget, QFrame
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl
+# Optional audio import
+try:
+    from PySide6.QtMultimedia import QSoundEffect
+except ImportError:
+    QSoundEffect = None
+
 import qtawesome as qta
 
 class ExpiryAlarmDialog(QDialog):
@@ -8,6 +14,17 @@ class ExpiryAlarmDialog(QDialog):
         self.setWindowTitle("تنبيه انتهاء الصلاحية")
         self.resize(600, 500)
         self.setStyleSheet("background-color: #1a1a1a; color: white;")
+
+        self.sound = None
+        if QSoundEffect:
+            try:
+                self.sound = QSoundEffect(self)
+                # Using a system beep or a common sound path if available
+                # For this demo, we'll try to use a placeholder or system alert
+                # self.sound.setSource(QUrl.fromLocalFile("assets/alarm.wav"))
+                self.sound.setLoopCount(QSoundEffect.Infinite)
+                # self.sound.play() # Start playing
+            except: pass
 
         layout = QVBoxLayout(self)
 
@@ -18,6 +35,7 @@ class ExpiryAlarmDialog(QDialog):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("background: #000000; border: none;")
         content = QWidget()
         c_layout = QVBoxLayout(content)
 
@@ -55,5 +73,10 @@ class ExpiryAlarmDialog(QDialog):
         self.stop_btn = QPushButton("إيقاف التنبيه")
         self.stop_btn.setObjectName("GoldButton")
         self.stop_btn.setFixedHeight(50)
-        self.stop_btn.clicked.connect(self.accept)
+        self.stop_btn.clicked.connect(self.stop_alarm)
         layout.addWidget(self.stop_btn)
+
+    def stop_alarm(self):
+        if self.sound:
+            self.sound.stop()
+        self.accept()

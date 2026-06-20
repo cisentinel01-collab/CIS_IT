@@ -20,7 +20,7 @@ class PurchaseOrder(BaseModel):
         for item in items:
             self.db.execute_query("""
                 INSERT INTO po_items (po_id, item_id, quantity, unit_price, total)
-                VALUES (%s, %s, %s, %s, %s)
+                VALUES ( %s ,  %s ,  %s ,  %s ,  %s )
             """, (po_id, item['item_id'], item['quantity'], item['unit_price'], item['quantity'] * item['unit_price']), commit=True)
 
         return po_id
@@ -30,7 +30,7 @@ class PurchaseOrder(BaseModel):
             SELECT pi.*, i.name as item_name, i.code as item_code
             FROM po_items pi
             JOIN items i ON pi.item_id = i.id
-            WHERE pi.po_id = %s
+            WHERE pi.po_id =  %s
         """
         return self.db.execute_query(query, (po_id,))
 

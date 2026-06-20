@@ -12,7 +12,7 @@ class Validator:
 
     @staticmethod
     def is_valid_phone(phone):
-        pattern = r'^\+?[0-9\s-]{8,}$'
+        pattern = r'^\+ %s [0-9\s-]{8,}$'
         return bool(re.match(pattern, phone))
 
     @staticmethod

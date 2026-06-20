@@ -29,11 +29,11 @@ class Movement(BaseModel):
                 batch_id = batch_model.create(batch_data)
 
                 # Link movement item to batch
-                item_query = "INSERT INTO movement_items (movement_id, item_id, batch_id, quantity, price) VALUES (%s, %s, %s, %s, %s)"
+                item_query = "INSERT INTO movement_items (movement_id, item_id, batch_id, quantity, price) VALUES ( %s ,  %s ,  %s ,  %s ,  %s )"
                 self.db.execute_query(item_query, (movement_id, item['item_id'], batch_id, quantity, item.get('price', 0)), commit=True)
 
                 # Update item total stock
-                update_stock_query = "UPDATE items SET current_stock = current_stock + %s WHERE id = %s"
+                update_stock_query = "UPDATE items SET current_stock = current_stock +  %s  WHERE id =  %s "
                 self.db.execute_query(update_stock_query, (quantity, item['item_id']), commit=True)
 
             else: # OUT
@@ -48,13 +48,13 @@ class Movement(BaseModel):
                     batch_model.update_quantity(b['id'], -deduct_qty)
 
                     # Record movement item for this batch
-                    item_query = "INSERT INTO movement_items (movement_id, item_id, batch_id, quantity, price) VALUES (%s, %s, %s, %s, %s)"
+                    item_query = "INSERT INTO movement_items (movement_id, item_id, batch_id, quantity, price) VALUES ( %s ,  %s ,  %s ,  %s ,  %s )"
                     self.db.execute_query(item_query, (movement_id, item['item_id'], b['id'], deduct_qty, item.get('price', 0)), commit=True)
 
                     remaining_to_deduct -= deduct_qty
 
                 # Update item total stock
-                update_stock_query = "UPDATE items SET current_stock = current_stock - %s WHERE id = %s"
+                update_stock_query = "UPDATE items SET current_stock = current_stock -  %s  WHERE id =  %s "
                 self.db.execute_query(update_stock_query, (quantity, item['item_id']), commit=True)
 
         return movement_id
@@ -65,7 +65,7 @@ class Movement(BaseModel):
             FROM movement_items mi
             JOIN items i ON mi.item_id = i.id
             LEFT JOIN batches b ON mi.batch_id = b.id
-            WHERE mi.movement_id = %s
+            WHERE mi.movement_id =  %s
         """
         return self.db.execute_query(query, (movement_id,))
 
@@ -73,13 +73,13 @@ class Movement(BaseModel):
         query = "SELECT m.*, s.name as supplier_name FROM movements m LEFT JOIN suppliers s ON m.supplier_id = s.id WHERE 1=1"
         params = []
         if type:
-            query += " AND m.type = %s"
+            query += " AND m.type =  %s "
             params.append(type)
         if start_date:
-            query += " AND m.date >= %s"
+            query += " AND m.date >=  %s "
             params.append(start_date)
         if end_date:
-            query += " AND m.date <= %s"
+            query += " AND m.date <=  %s "
             params.append(end_date)
         query += " ORDER BY m.date DESC"
         return self.db.execute_query(query, tuple(params))

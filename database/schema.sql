@@ -1,8 +1,8 @@
--- WMS Database Schema (ERP Upgrade)
+-- WMS Database Schema (ERP Upgrade - PostgreSQL)
 
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     full_name TEXT NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Suppliers Table
 CREATE TABLE IF NOT EXISTS suppliers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     phone TEXT,
     email TEXT,
@@ -28,104 +28,94 @@ CREATE TABLE IF NOT EXISTS suppliers (
 
 -- Warehouse Locations Table
 CREATE TABLE IF NOT EXISTS locations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL, -- 'مخزن رئيسي', 'رف A1', etc.
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
     description TEXT,
     is_deleted INTEGER DEFAULT 0
 );
 
 -- Items Table
 CREATE TABLE IF NOT EXISTS items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     code TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     category TEXT,
     unit TEXT,
-    location_id INTEGER,
-    supplier_id INTEGER, -- Link every product to a supplier
-    min_stock INTEGER DEFAULT 0, -- minimum_quantity
+    location_id INTEGER REFERENCES locations(id),
+    supplier_id INTEGER REFERENCES suppliers(id),
+    min_stock INTEGER DEFAULT 0,
     current_stock INTEGER DEFAULT 0,
     image_path TEXT,
     description TEXT,
     is_deleted INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (location_id) REFERENCES locations(id),
-    FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Batches Table
 CREATE TABLE IF NOT EXISTS batches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_id INTEGER NOT NULL,
+    id SERIAL PRIMARY KEY,
+    item_id INTEGER NOT NULL REFERENCES items(id),
     batch_number TEXT NOT NULL,
     quantity INTEGER DEFAULT 0,
     production_date DATE,
     expiry_date DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (item_id) REFERENCES items(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Stock Movements (In/Out)
 CREATE TABLE IF NOT EXISTS movements (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT NOT NULL, -- 'IN' (Receiving), 'OUT' (Issuing)
-    reference_no TEXT NOT NULL, -- Invoice number or operation ID
+    id SERIAL PRIMARY KEY,
+    type TEXT NOT NULL, -- 'IN', 'OUT'
+    reference_no TEXT NOT NULL,
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    supplier_id INTEGER, -- For IN
-    received_by TEXT, -- For IN
-    issuing_entity TEXT, -- For OUT (الجهة المستلمة)
-    receiver_name TEXT, -- For OUT (اسم الشخص المستلم)
-    employee_name TEXT, -- For OUT (الموظف الذي قام بالصرف)
-    reason TEXT, -- For OUT
+    supplier_id INTEGER REFERENCES suppliers(id),
+    received_by TEXT,
+    issuing_entity TEXT,
+    receiver_name TEXT,
+    employee_name TEXT,
+    reason TEXT,
     notes TEXT,
     discount_percent REAL DEFAULT 0,
     discount_amount REAL DEFAULT 0,
     subtotal REAL DEFAULT 0,
-    final_total REAL DEFAULT 0,
-    FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    final_total REAL DEFAULT 0
 );
 
 -- Movement Items (Details)
 CREATE TABLE IF NOT EXISTS movement_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    movement_id INTEGER NOT NULL,
-    item_id INTEGER NOT NULL,
-    batch_id INTEGER, -- Linked to a specific batch
+    id SERIAL PRIMARY KEY,
+    movement_id INTEGER NOT NULL REFERENCES movements(id),
+    item_id INTEGER NOT NULL REFERENCES items(id),
+    batch_id INTEGER REFERENCES batches(id),
     quantity INTEGER NOT NULL,
-    price REAL DEFAULT 0, -- For IN
-    FOREIGN KEY (movement_id) REFERENCES movements(id),
-    FOREIGN KEY (item_id) REFERENCES items(id),
-    FOREIGN KEY (batch_id) REFERENCES batches(id)
+    price REAL DEFAULT 0
 );
 
 -- Purchase Orders
 CREATE TABLE IF NOT EXISTS purchase_orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    supplier_id INTEGER NOT NULL,
+    id SERIAL PRIMARY KEY,
+    supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
     po_number TEXT UNIQUE NOT NULL,
     date DATE DEFAULT CURRENT_DATE,
-    status TEXT DEFAULT 'pending', -- 'pending', 'received', 'cancelled'
+    status TEXT DEFAULT 'pending',
     total REAL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Purchase Order Items
 CREATE TABLE IF NOT EXISTS po_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    po_id INTEGER NOT NULL,
-    item_id INTEGER NOT NULL,
+    id SERIAL PRIMARY KEY,
+    po_id INTEGER NOT NULL REFERENCES purchase_orders(id),
+    item_id INTEGER NOT NULL REFERENCES items(id),
     quantity INTEGER NOT NULL,
     unit_price REAL DEFAULT 0,
-    total REAL DEFAULT 0,
-    FOREIGN KEY (po_id) REFERENCES purchase_orders(id),
-    FOREIGN KEY (item_id) REFERENCES items(id)
+    total REAL DEFAULT 0
 );
 
 -- Audit Logs
 CREATE TABLE IF NOT EXISTS audit_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
     action TEXT NOT NULL,
     table_name TEXT,
     record_id INTEGER,
@@ -134,13 +124,12 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     new_value TEXT,
     device_name TEXT,
     ip_address TEXT,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Company Settings
 CREATE TABLE IF NOT EXISTS settings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     company_name TEXT DEFAULT 'American Marine Services Free-Zone',
     logo_path TEXT,
     address TEXT,
@@ -149,4 +138,6 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 -- Initialize default settings
-INSERT INTO settings (company_name) SELECT 'American Marine Services Free-Zone' WHERE NOT EXISTS (SELECT 1 FROM settings);
+INSERT INTO settings (company_name)
+SELECT 'American Marine Services Free-Zone'
+WHERE NOT EXISTS (SELECT 1 FROM settings);

@@ -28,6 +28,6 @@ class AuditLog(BaseModel):
             SELECT al.*, u.full_name as user_name
             FROM audit_logs al
             LEFT JOIN users u ON al.user_id = u.id
-            ORDER BY al.timestamp DESC LIMIT %s
+            ORDER BY al.timestamp DESC LIMIT  %s
         """
         return self.db.execute_query(query, (limit,))

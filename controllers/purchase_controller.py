@@ -74,7 +74,7 @@ class PurchaseController:
                 last_price_res = self.item_model.db.execute_query("""
                     SELECT price FROM movement_items mi
                     JOIN movements m ON mi.movement_id = m.id
-                    WHERE mi.item_id = %s AND m.type = 'IN'
+                    WHERE mi.item_id =  %s  AND m.type = 'IN'
                     ORDER BY m.date DESC LIMIT 1
                 """, (item['id'],))
                 price = last_price_res[0]['price'] if last_price_res else 0

@@ -8,6 +8,7 @@ class DBManager:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(DBManager, cls).__new__(cls)
+            # Database configuration (should ideally be in a .env file)
             cls._instance.config = {
                 'dbname': 'wms_erp',
                 'user': 'wms_user',
@@ -18,7 +19,11 @@ class DBManager:
         return cls._instance
 
     def get_connection(self):
-        return psycopg2.connect(**self.config)
+        try:
+            return psycopg2.connect(**self.config)
+        except Exception as e:
+            print(f"Database Connection Error: {e}")
+            raise e
 
     def execute_query(self, query, params=(), commit=False):
         conn = self.get_connection()
@@ -27,10 +32,13 @@ class DBManager:
                 cursor.execute(query, params)
                 if commit:
                     conn.commit()
-                    # For PostgreSQL, we might need a returning clause or use cursor.fetchone() for last row id
-                    if "INSERT" in query.upper() and "RETURNING" in query.upper():
-                        res = cursor.fetchone()
-                        return res['id'] if res else None
+                    # If it's an INSERT with RETURNING, fetch the ID
+                    if "RETURNING" in query.upper():
+                        try:
+                            res = cursor.fetchone()
+                            return res['id'] if res and 'id' in res else None
+                        except:
+                            return None
                     return None
 
                 return [dict(row) for row in cursor.fetchall()]
@@ -40,9 +48,3 @@ class DBManager:
             raise e
         finally:
             conn.close()
-
-    def execute_insert(self, query, params=()):
-        """Helper for inserts that return ID"""
-        if "RETURNING id" not in query.upper():
-            query += " RETURNING id"
-        return self.execute_query(query, params, commit=True)

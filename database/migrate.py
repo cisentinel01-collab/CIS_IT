@@ -5,13 +5,16 @@ from database.db_manager import DBManager
 def migrate():
     db = DBManager()
 
-    # Initialize Schema if needed
-    schema_path = "database/schema_pg.sql"
-    if os.path.exists(schema_path):
-        print("Initializing PostgreSQL schema...")
-        with open(schema_path, "r", encoding="utf-8") as f:
-            sql = f.read()
-            db.execute_query(sql, commit=True)
+    # Initialize Schema if tables don't exist
+    try:
+        schema_path = "database/schema.sql"
+        if os.path.exists(schema_path):
+            print("Initializing PostgreSQL Database schema...")
+            with open(schema_path, "r", encoding="utf-8") as f:
+                sql = f.read()
+                db.execute_query(sql, commit=True)
+    except Exception as e:
+        print(f"Schema initialization warning: {e}")
 
     user_model = User()
 
@@ -21,9 +24,7 @@ def migrate():
     # 3. المتابعة (View only)
 
     # Check if any admin exists. If not, create the default one.
-    # We NO LONGER delete users here to preserve data added via UI.
-
-    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'admin'")
+    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = %s", ('admin',))
     if res[0]['count'] == 0:
         print("Creating default admin...")
         user_model.create_user({
@@ -34,7 +35,7 @@ def migrate():
         })
 
     # Check for warehouse_manager
-    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'warehouse_manager'")
+    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = %s", ('warehouse_manager',))
     if res[0]['count'] == 0:
         print("Creating default manager...")
         user_model.create_user({
@@ -45,7 +46,7 @@ def migrate():
         })
 
     # Check for follow_up
-    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = 'follow_up'")
+    res = db.execute_query("SELECT COUNT(*) as count FROM users WHERE role = %s", ('follow_up',))
     if res[0]['count'] == 0:
         print("Creating default follow-up user...")
         user_model.create_user({

@@ -62,7 +62,7 @@ class DashboardController:
             "total_out": total_out,
             "top_item": top_item_name,
             "top_supplier": top_supplier_name,
-            "expiring_count": len(db.execute_query("SELECT id FROM batches WHERE expiry_date <= CURRENT_DATE + INTERVAL '6 months' AND expiry_date >= CURRENT_DATE AND quantity > 0")),
+            "expiring_count": len(db.execute_query("SELECT id FROM batches WHERE expiry_date <= date('now', '+6 months') AND expiry_date >= CURRENT_DATE AND quantity > 0")),
             "expired_count": len(db.execute_query("SELECT id FROM batches WHERE expiry_date < CURRENT_DATE AND quantity > 0")),
             "reorder_count": len(db.execute_query("SELECT id FROM items WHERE current_stock < min_stock AND is_deleted = 0")),
             "reorder_items": db.execute_query("""

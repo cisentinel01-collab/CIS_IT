@@ -20,9 +20,9 @@ class Item(BaseModel):
             FROM items
             LEFT JOIN locations ON items.location_id = locations.id
             WHERE items.is_deleted = 0 AND (
-                items.name LIKE %s OR
-                items.code LIKE %s OR
-                items.category LIKE %s
+                items.name LIKE  %s  OR
+                items.code LIKE  %s  OR
+                items.category LIKE  %s
             )
         """
         pattern = f"%{term}%"
@@ -38,7 +38,7 @@ class Item(BaseModel):
         return self.db.execute_query(query)
 
     def update_stock(self, item_id, quantity_change):
-        query = "UPDATE items SET current_stock = current_stock + %s WHERE id = %s"
+        query = "UPDATE items SET current_stock = current_stock +  %s  WHERE id =  %s "
         self.db.execute_query(query, (quantity_change, item_id), commit=True)
 
     def get_by_id(self, record_id):
@@ -46,7 +46,7 @@ class Item(BaseModel):
             SELECT items.*, locations.name as location_name
             FROM items
             LEFT JOIN locations ON items.location_id = locations.id
-            WHERE items.id = %s
+            WHERE items.id =  %s
         """
         results = self.db.execute_query(query, (record_id,))
         return results[0] if results else None

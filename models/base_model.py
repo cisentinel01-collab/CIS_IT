@@ -9,7 +9,6 @@ class BaseModel:
     def get_all(self, include_deleted=False):
         query = f"SELECT * FROM {self.table_name}"
         if not include_deleted:
-            # Check if is_deleted column exists or just append if safe
             query += " WHERE is_deleted = 0"
         return self.db.execute_query(query)
 

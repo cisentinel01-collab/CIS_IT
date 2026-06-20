@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QFrame
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QFrame, QPushButton
 from PySide6.QtCore import Qt
 
 class SupplierDetailsDialog(QDialog):
@@ -49,5 +49,3 @@ class SupplierDetailsDialog(QDialog):
         val.setStyleSheet("font-size: 18px; font-weight: bold; color: #d4af37;")
         l.addWidget(val, 0, Qt.AlignCenter)
         layout.addWidget(frame)
-
-from PySide6.QtWidgets import QPushButton # Ensure QPushButton is available

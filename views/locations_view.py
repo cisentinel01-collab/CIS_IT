@@ -42,7 +42,7 @@ class LocationsView(QWidget):
     def refresh(self):
         term = self.search_input.text()
         if term:
-            locations = self.model.execute_query("SELECT * FROM locations WHERE name LIKE %s AND is_deleted = 0", (f"%{term}%",))
+            locations = self.model.execute_query("SELECT * FROM locations WHERE name LIKE  %s  AND is_deleted = 0", (f"%{term}%",))
         else:
             locations = self.model.get_all()
 

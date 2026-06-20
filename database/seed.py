@@ -15,14 +15,14 @@ def seed_data():
         {"username": "followup", "password": "123", "full_name": "المتابعة", "role": "follow_up"}
     ]
     for u in users:
-        if not db.execute_query("SELECT id FROM users WHERE username = %s", (u['username'],)):
+        if not db.execute_query("SELECT id FROM users WHERE username =  %s ", (u['username'],)):
             user_model.create_user(u)
 
     # 2. Locations
     loc_model = Location()
     locations = ["مخزن رئيسي", "رف A1", "رف A2"]
     for l in locations:
-        if not db.execute_query("SELECT id FROM locations WHERE name = %s", (l,)):
+        if not db.execute_query("SELECT id FROM locations WHERE name =  %s ", (l,)):
             loc_model.create({"name": l, "description": "موقع تخزين"})
 
     # 3. Suppliers
@@ -32,7 +32,7 @@ def seed_data():
         {"name": "مورد الخليج للخدمات", "phone": "9876543210", "email": "sales@gulfserv.com", "address": "دبي"}
     ]
     for s in suppliers:
-        if not db.execute_query("SELECT id FROM suppliers WHERE name = %s", (s['name'],)):
+        if not db.execute_query("SELECT id FROM suppliers WHERE name =  %s ", (s['name'],)):
             supplier_model.create(s)
 
     print("Data seeding completed successfully with 2 roles.")
