@@ -3,14 +3,11 @@ from barcode.writer import ImageWriter
 import os
 
 class BarcodeGenerator:
- @staticmethod
- def generate(code, filename=None):
- if not filename:
- filename = f"images/barcodes/{code}"
-
- os.makedirs(os.path.dirname(filename), exist_ok=True)
-
- EAN = barcode.get_barcode_class('code128')
- ean = EAN(code, writer=ImageWriter())
- ean.save(filename)
- return f"{filename}.png"
+    @staticmethod
+    def generate(code_text, filename):
+        os.makedirs("images/barcodes", exist_ok=True)
+        EAN = barcode.get_barcode_class('code128')
+        ean = EAN(code_text, writer=ImageWriter())
+        path = os.path.join("images/barcodes", filename)
+        ean.save(path)
+        return path + ".png"
