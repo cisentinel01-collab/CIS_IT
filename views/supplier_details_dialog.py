@@ -12,9 +12,10 @@ class SupplierDetailsDialog(QDialog):
 
         # Stats Header
         stats_layout = QHBoxLayout()
-        self.add_stat(stats_layout, "عدد الأصناف", str(stats.get('product_count', 0)))
-        self.add_stat(stats_layout, "إجمالي المشتريات", f"{stats.get('total_purchase_value', 0):,.2f}")
-        self.add_stat(stats_layout, "آخر توريد", str(stats.get('last_purchase_date', 'N/A')))
+        self.add_stat(stats_layout, "عدد الأصناف", str(stats.get('product_count') or 0))
+        val = stats.get('total_purchase_value') or 0
+        self.add_stat(stats_layout, "إجمالي المشتريات", f"{float(val):,.2f}")
+        self.add_stat(stats_layout, "آخر توريد", str(stats.get('last_purchase_date') or 'N/A'))
         layout.addLayout(stats_layout)
 
         # Products Table
@@ -29,10 +30,11 @@ class SupplierDetailsDialog(QDialog):
         self.table.setRowCount(len(products))
 
         for r, p in enumerate(products):
-            self.table.setItem(r, 0, QTableWidgetItem(str(p['name'])))
-            self.table.setItem(r, 1, QTableWidgetItem(str(p['code'])))
-            self.table.setItem(r, 2, QTableWidgetItem(f"{p.get('last_price', 0):,.2f}"))
-            self.table.setItem(r, 3, QTableWidgetItem(str(p['current_stock'])))
+            self.table.setItem(r, 0, QTableWidgetItem(str(p.get('name') or "")))
+            self.table.setItem(r, 1, QTableWidgetItem(str(p.get('code') or "")))
+            last_price = p.get('last_price') or 0
+            self.table.setItem(r, 2, QTableWidgetItem(f"{float(last_price):,.2f}"))
+            self.table.setItem(r, 3, QTableWidgetItem(str(p.get('current_stock') or 0)))
 
         layout.addWidget(self.table)
 

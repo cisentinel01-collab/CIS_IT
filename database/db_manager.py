@@ -2,13 +2,15 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 
+from psycopg2 import pool
+
 class DBManager:
     _instance = None
+    _pool = None
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(DBManager, cls).__new__(cls)
-            # Load from environment variables for security
             cls._instance.config = {
                 'dbname': os.getenv('DB_NAME', 'wms_erp'),
                 'user': os.getenv('DB_USER', 'wms_user'),
@@ -16,14 +18,17 @@ class DBManager:
                 'host': os.getenv('DB_HOST', 'localhost'),
                 'port': os.getenv('DB_PORT', '5432')
             }
+            try:
+                cls._pool = pool.SimpleConnectionPool(1, 10, **cls._instance.config)
+            except Exception as e:
+                print(f"Pool creation error: {e}")
         return cls._instance
 
     def get_connection(self):
-        try:
-            return psycopg2.connect(**self.config)
-        except Exception as e:
-            print(f"Database Connection Error: {e}")
-            raise e
+        return self._pool.getconn()
+
+    def release_connection(self, conn):
+        self._pool.putconn(conn)
 
     def execute_query(self, query, params=(), commit=False):
         conn = self.get_connection()
@@ -47,4 +52,4 @@ class DBManager:
                 conn.rollback()
             raise e
         finally:
-            conn.close()
+            self.release_connection(conn)

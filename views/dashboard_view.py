@@ -119,7 +119,13 @@ class DashboardView(QWidget):
         logs = self.controller.get_recent_activities()
         self.table.setRowCount(len(logs))
         for row, log in enumerate(logs):
-            time_str = log['timestamp'].split()[1] if ' ' in log['timestamp'] else log['timestamp']
+            ts = log['timestamp']
+            if hasattr(ts, 'strftime'):
+                time_str = ts.strftime("%H:%M:%S")
+            else:
+                ts_str = str(ts)
+                time_str = ts_str.split()[1] if ' ' in ts_str else ts_str
+
             self.table.setItem(row, 0, QTableWidgetItem(time_str))
             self.table.setItem(row, 1, QTableWidgetItem(log['user_name'] or "النظام"))
             self.table.setItem(row, 2, QTableWidgetItem(log['action']))
