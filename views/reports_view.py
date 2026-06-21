@@ -17,7 +17,7 @@ class ReportsView(QWidget):
         self.create_report_item(grid, "تقرير المخزون الحالي", "fa5s.boxes", self.handle_inv_pdf, self.handle_inv_excel, 0, 0)
         self.create_report_item(grid, "تقرير الوارد", "fa5s.file-import", self.handle_in_pdf, self.handle_in_excel, 0, 1)
         self.create_report_item(grid, "تقرير الصادر", "fa5s.file-export", self.handle_out_pdf, self.handle_out_excel, 1, 0)
-        self.create_report_item(grid, "تقرير النواقص", "fa5s.shopping-basket", self.handle_inv_pdf, None, 1, 1)
+        self.create_report_item(grid, "تقرير النواقص", "fa5s.shopping-basket", self.handle_low_stock_pdf, self.handle_low_stock_excel, 1, 1)
         self.create_report_item(grid, "تقرير منتهى الصلاحية", "fa5s.calendar-times", self.handle_expired_pdf, None, 2, 0)
         self.create_report_item(grid, "سجل نشاط المستخدمين", "fa5s.user-shield", self.handle_audit_pdf, None, 2, 1)
 
@@ -69,4 +69,12 @@ class ReportsView(QWidget):
 
     def handle_expired_pdf(self):
         path = self.controller.export_expiry_to_pdf(expired_only=True)
+        QMessageBox.information(self, "نجاح", f"تم الحفظ في {path}")
+
+    def handle_low_stock_pdf(self):
+        path = self.controller.export_low_stock_to_pdf()
+        QMessageBox.information(self, "نجاح", f"تم الحفظ في {path}")
+
+    def handle_low_stock_excel(self):
+        path = self.controller.export_low_stock_to_excel()
         QMessageBox.information(self, "نجاح", f"تم الحفظ في {path}")
