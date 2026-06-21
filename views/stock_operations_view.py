@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QComboBox, QSpinBox, QFormLayout,
-                             QGroupBox, QMessageBox, QTabWidget, QDoubleSpinBox, QInputDialog, QDateEdit)
+                             QGroupBox, QMessageBox, QTabWidget, QDoubleSpinBox,
+                             QInputDialog, QDateEdit, QGridLayout)
 from PySide6.QtCore import Qt, Signal
 import qtawesome as qta
 from models.item import Item
@@ -75,70 +76,70 @@ class StockOperationsView(QWidget):
 
         layout.addWidget(info_group)
 
-        # Item Selector
+        # Item Selector (Refactored to Grid for better space)
         selector_group = QGroupBox("إضافة أصناف")
-        selector_layout = QHBoxLayout(selector_group)
+        selector_grid = QGridLayout(selector_group)
+        selector_grid.setSpacing(15)
 
         self.item_combo = QComboBox()
         self.item_combo.setEditable(True)
-        self.item_combo.setMinimumWidth(300)
         self.item_combo.setPlaceholderText("اختر صنف أو ابحث بالكود...")
         self.load_items()
-        selector_layout.addWidget(QLabel("الصنف:"))
-        selector_layout.addWidget(self.item_combo)
+        self.item_combo.currentIndexChanged.connect(self.handle_item_selection_change)
 
         scan_item_btn = QPushButton()
         scan_item_btn.setIcon(qta.icon("fa5s.qrcode", color="#1a2a6c"))
         scan_item_btn.setFixedSize(40, 40)
         scan_item_btn.setToolTip("مسح QR كود لاختيار صنف")
         scan_item_btn.clicked.connect(self.handle_item_scan)
-        selector_layout.addWidget(scan_item_btn)
 
-        # Horizontal layout for QSpinBox with label
-        qty_box = QHBoxLayout()
-        qty_box.setSpacing(5)
+        item_h_layout = QHBoxLayout()
+        item_h_layout.addWidget(self.item_combo)
+        item_h_layout.addWidget(scan_item_btn)
+
+        selector_grid.addWidget(QLabel("الصنف:"), 0, 0)
+        selector_grid.addLayout(item_h_layout, 0, 1, 1, 3)
+
         self.qty_input = QSpinBox()
         self.qty_input.setMinimum(1)
         self.qty_input.setMaximum(1000000)
-        self.qty_input.setMinimumWidth(80)
-        qty_box.addWidget(QLabel("الكمية:"))
-        qty_box.addWidget(self.qty_input)
-        selector_layout.addLayout(qty_box)
+        self.qty_input.setMinimumHeight(35)
+        selector_grid.addWidget(QLabel("الكمية:"), 1, 0)
+        selector_grid.addWidget(self.qty_input, 1, 1)
 
-        # Price box
-        price_box = QHBoxLayout()
-        price_box.setSpacing(5)
         self.price_input = QLineEdit()
-        self.price_input.setPlaceholderText("السعر")
-        self.price_input.setMinimumWidth(80)
-        price_box.addWidget(QLabel("السعر:"))
-        price_box.addWidget(self.price_input)
-        selector_layout.addLayout(price_box)
+        self.price_input.setPlaceholderText("0.00")
+        self.price_input.setMinimumHeight(35)
+        selector_grid.addWidget(QLabel("السعر:"), 1, 2)
+        selector_grid.addWidget(self.price_input, 1, 3)
 
         if self.op_type == "IN":
-            batch_box = QHBoxLayout()
             self.batch_input = QLineEdit()
-            self.batch_input.setPlaceholderText("رقم التشغيلة")
+            self.batch_input.setPlaceholderText("رقم التشغيلة / Batch")
+            self.batch_input.setMinimumHeight(35)
+            selector_grid.addWidget(QLabel("التشغيلة:"), 2, 0)
+            selector_grid.addWidget(self.batch_input, 2, 1)
+
             self.prod_date = QDateEdit()
             self.prod_date.setCalendarPopup(True)
             from PySide6.QtCore import QDate
             self.prod_date.setDate(QDate.currentDate())
+            self.prod_date.setMinimumHeight(35)
+            selector_grid.addWidget(QLabel("تاريخ الإنتاج:"), 2, 2)
+            selector_grid.addWidget(self.prod_date, 2, 3)
+
             self.exp_date = QDateEdit()
             self.exp_date.setCalendarPopup(True)
             self.exp_date.setDate(QDate.currentDate().addYears(1))
+            self.exp_date.setMinimumHeight(35)
+            selector_grid.addWidget(QLabel("تاريخ الانتهاء:"), 3, 0)
+            selector_grid.addWidget(self.exp_date, 3, 1)
 
-            batch_box.addWidget(QLabel("التشغيلة:"))
-            batch_box.addWidget(self.batch_input)
-            batch_box.addWidget(QLabel("إنتاج:"))
-            batch_box.addWidget(self.prod_date)
-            batch_box.addWidget(QLabel("إنتهاء:"))
-            batch_box.addWidget(self.exp_date)
-            selector_layout.addLayout(batch_box)
-
-        add_item_btn = QPushButton("إضافة")
+        add_item_btn = QPushButton("إضافة الصنف للقائمة المؤقتة")
         add_item_btn.setObjectName("GoldButton")
+        add_item_btn.setMinimumHeight(40)
         add_item_btn.clicked.connect(self.add_item_to_list)
-        selector_layout.addWidget(add_item_btn)
+        selector_grid.addWidget(add_item_btn, 3, 2, 1, 2)
 
         layout.addWidget(selector_group)
 
@@ -159,6 +160,19 @@ class StockOperationsView(QWidget):
         self.summary_label = QLabel("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
         self.summary_label.setObjectName("GoldSummaryLabel")
         fin_layout.addRow(self.summary_label)
+
+        # Submit Button (Moved here as requested, after financials)
+        self.submit_btn = QPushButton("إتمام العملية وحفظ PDF")
+        self.submit_btn.setObjectName("PrimaryButton")
+        self.submit_btn.setFixedHeight(50)
+        from utils.auth import AuthManager
+        if not AuthManager.has_permission(self.op_type.lower(), 'submit'):
+            self.submit_btn.setEnabled(False)
+            self.submit_btn.setToolTip("لا تملك صلاحية تنفيذ هذه العملية")
+
+        self.submit_btn.clicked.connect(self.handle_submit)
+        fin_layout.addRow(self.submit_btn)
+
         layout.addWidget(fin_group)
 
         # Selected Items Table
@@ -168,18 +182,6 @@ class StockOperationsView(QWidget):
         self.table.setHorizontalHeaderLabels(headers)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
-
-        # Submit Button
-        submit_btn = QPushButton("إتمام العملية وحفظ PDF")
-        submit_btn.setObjectName("PrimaryButton")
-        submit_btn.setFixedHeight(50)
-        from utils.auth import AuthManager
-        if not AuthManager.has_permission(self.op_type.lower(), 'submit'):
-            submit_btn.setEnabled(False)
-            submit_btn.setToolTip("لا تملك صلاحية تنفيذ هذه العملية")
-
-        submit_btn.clicked.connect(self.handle_submit)
-        layout.addWidget(submit_btn)
 
     def setup_history_tab(self):
         layout = QVBoxLayout(self.history_tab)
@@ -244,6 +246,24 @@ class StockOperationsView(QWidget):
         discount_amt = (subtotal * discount_pct) / 100
         final = subtotal - discount_amt
         self.summary_label.setText(f"المجموع: {subtotal:,.2f} | الخصم: {discount_amt:,.2f} | الإجمالي: {final:,.2f}")
+
+    def handle_item_selection_change(self):
+        item_data = self.item_combo.currentData()
+        if item_data:
+            # Fetch last purchase price
+            from database.db_manager import DBManager
+            db = DBManager()
+            query = """
+                SELECT price FROM movement_items mi
+                JOIN movements m ON mi.movement_id = m.id
+                WHERE mi.item_id = %s AND m.type = 'IN'
+                ORDER BY m.date DESC LIMIT 1
+            """
+            res = db.execute_query(query, (item_data['id'],))
+            if res:
+                self.price_input.setText(f"{res[0]['price']:.2f}")
+            else:
+                self.price_input.setText("0.00")
 
     def handle_item_scan(self):
         code, ok = QInputDialog.getText(self, "مسح QR", "يرجى مسح كود QR الصنف:")

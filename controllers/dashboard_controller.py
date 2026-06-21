@@ -51,7 +51,18 @@ class DashboardController:
         stats['category_data'] = {r['cat']: r['qty'] for r in cat_data}
 
         # Alerts & Lists
-        stats['expiring_count'] = db.execute_query("SELECT COUNT(*) as count FROM batches WHERE expiry_date <= CURRENT_DATE + INTERVAL '6 months' AND expiry_date >= CURRENT_DATE AND quantity > 0")[0]['count'] or 0
+        stats['expiring_items'] = db.execute_query("""
+            SELECT i.name, i.code, b.expiry_date,
+            EXTRACT(YEAR FROM age(b.expiry_date, CURRENT_DATE)) * 12 + EXTRACT(MONTH FROM age(b.expiry_date, CURRENT_DATE)) as months_left
+            FROM batches b
+            JOIN items i ON b.item_id = i.id
+            WHERE b.expiry_date <= CURRENT_DATE + INTERVAL '6 months'
+            AND b.expiry_date >= CURRENT_DATE
+            AND b.quantity > 0
+            ORDER BY b.expiry_date ASC
+            LIMIT 10
+        """)
+        stats['expiring_count'] = len(stats['expiring_items'])
         stats['expired_count'] = db.execute_query("SELECT COUNT(*) as count FROM batches WHERE expiry_date < CURRENT_DATE AND quantity > 0")[0]['count'] or 0
 
         reorder_list = db.execute_query("""

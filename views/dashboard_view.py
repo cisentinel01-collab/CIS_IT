@@ -77,6 +77,29 @@ class DashboardView(QWidget):
         ss_layout.addStretch()
         details_layout.addWidget(stock_status_frame, 1)
 
+        # Expiry Alerts
+        expiry_frame = QFrame()
+        expiry_frame.setObjectName("Card")
+        ex_layout = QVBoxLayout(expiry_frame)
+        ex_title = QLabel("أصناف تنتهي صلاحيتها قريباً")
+        ex_title.setObjectName("CardTitle")
+        ex_layout.addWidget(ex_title)
+
+        ex_table = QTableWidget()
+        ex_table.setColumnCount(4)
+        ex_table.setHorizontalHeaderLabels(["الصنف", "الكود", "تاريخ الانتهاء", "متبقي (شهر)"])
+        ex_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        ex_table.verticalHeader().setVisible(False)
+        ex_table.setRowCount(len(stats['expiring_items']))
+        for r, item in enumerate(stats['expiring_items']):
+            ex_table.setItem(r, 0, QTableWidgetItem(str(item['name'])))
+            ex_table.setItem(r, 1, QTableWidgetItem(str(item['code'])))
+            ex_table.setItem(r, 2, QTableWidgetItem(str(item['expiry_date'])))
+            months = int(item['months_left'])
+            ex_table.setItem(r, 3, QTableWidgetItem(str(months)))
+        ex_layout.addWidget(ex_table)
+        details_layout.addWidget(expiry_frame, 2)
+
         # Reorder Suggestions
         reorder_frame = QFrame()
         reorder_frame.setObjectName("Card")
