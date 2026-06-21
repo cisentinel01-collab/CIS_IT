@@ -18,13 +18,13 @@ class DashboardView(QWidget):
         content_widget = QWidget()
         main_layout = QVBoxLayout(content_widget)
         main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(25)
+        main_layout.setSpacing(40) # Increased comfort spacing
 
         stats = self.controller.get_dashboard_stats()
 
         # 1. Main KPI Row
         cards_layout = QGridLayout()
-        cards_layout.setSpacing(20)
+        cards_layout.setSpacing(30)
 
         self.add_card(cards_layout, "إجمالي الأصناف", str(stats['total_items']), "fa5s.boxes", "#1a2a6c", 0, 0)
         self.add_card(cards_layout, "قيمة المخزن", f"{stats['total_value']:,.2f}", "fa5s.money-bill-wave", "#27ae60", 0, 1)
@@ -164,18 +164,21 @@ class DashboardView(QWidget):
     def add_card(self, layout, title, value, icon, color, r, c):
         card = QFrame()
         card.setObjectName("Card")
+        card.setMinimumHeight(150) # Taller cards
         card_layout = QHBoxLayout(card)
+        card_layout.setContentsMargins(25, 25, 25, 25)
 
         icon_label = QLabel()
-        icon_label.setPixmap(qta.icon(icon, color=color).pixmap(45, 45))
+        icon_label.setPixmap(qta.icon(icon, color=color).pixmap(65, 65)) # Larger icons
         card_layout.addWidget(icon_label)
 
         text_layout = QVBoxLayout()
         t_label = QLabel(title)
         t_label.setObjectName("CardTitle")
+        t_label.setStyleSheet("font-size: 18px;")
         v_label = QLabel(value)
         v_label.setObjectName("CardValue")
-        v_label.setStyleSheet(f"color: {color};")
+        v_label.setStyleSheet(f"color: {color}; font-size: 32px;") # Larger value font
 
         text_layout.addWidget(t_label)
         text_layout.addWidget(v_label)

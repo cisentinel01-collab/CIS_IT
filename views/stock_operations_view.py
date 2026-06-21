@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QLineEdit, QLabel,
                              QHeaderView, QComboBox, QSpinBox, QFormLayout,
                              QGroupBox, QMessageBox, QTabWidget, QDoubleSpinBox,
-                             QInputDialog, QDateEdit, QGridLayout)
+                             QInputDialog, QDateEdit, QGridLayout, QScrollArea, QFrame)
 from PySide6.QtCore import Qt, Signal
 import qtawesome as qta
 from models.item import Item
@@ -34,62 +34,79 @@ class StockOperationsView(QWidget):
         self.tabs.addTab(self.history_tab, "السجل")
 
     def setup_operation_tab(self):
-        layout = QVBoxLayout(self.op_tab)
-        layout.setContentsMargins(20, 20, 20, 20)
+        main_layout = QVBoxLayout(self.op_tab)
+
+        # Scroll Area for spacious layout
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(30) # High spacing for "comfort"
 
         # Header Info
         info_group = QGroupBox("بيانات العملية")
         info_layout = QFormLayout(info_group)
+        info_layout.setSpacing(20)
+        info_layout.setLabelAlignment(Qt.AlignRight)
 
         self.ref_input = QLineEdit()
         self.ref_input.setReadOnly(True)
+        self.ref_input.setMinimumHeight(45)
         self.ref_input.setPlaceholderText("سيتم التوليد تلقائياً")
         self.ref_input.setText(self.controller.generate_invoice_no(self.op_type))
         info_layout.addRow("رقم الفاتورة/العملية:", self.ref_input)
 
         if self.op_type == "IN":
             self.supplier_combo = QComboBox()
+            self.supplier_combo.setMinimumHeight(45)
             self.supplier_combo.setToolTip("اختر المورد الذي تم استلام الأصناف منه")
             self.load_suppliers()
             info_layout.addRow("المورد:", self.supplier_combo)
 
             self.receiver_input = QLineEdit()
+            self.receiver_input.setMinimumHeight(45)
             self.receiver_input.setPlaceholderText("أدخل اسم الموظف المستلم")
             from utils.validator import Validator
             Validator.setup_strict_validation(self.receiver_input, "name")
             info_layout.addRow("اسم المستلم:", self.receiver_input)
         else:
             self.issuing_entity = QLineEdit()
+            self.issuing_entity.setMinimumHeight(45)
             self.issuing_entity.setPlaceholderText("مثال: قسم الصيانة، العميل...")
             from utils.validator import Validator
             Validator.setup_strict_validation(self.issuing_entity, "name")
             info_layout.addRow("الجهة المستلمة:", self.issuing_entity)
 
             self.receiver_name = QLineEdit()
+            self.receiver_name.setMinimumHeight(45)
             self.receiver_name.setPlaceholderText("اسم الشخص الذي تسلم العهدة")
             Validator.setup_strict_validation(self.receiver_name, "name")
             info_layout.addRow("اسم الشخص المستلم:", self.receiver_name)
 
             self.reason_input = QLineEdit()
+            self.reason_input.setMinimumHeight(45)
             self.reason_input.setPlaceholderText("سبب خروج الأصناف من المخزن")
             info_layout.addRow("سبب الصرف:", self.reason_input)
 
         layout.addWidget(info_group)
 
-        # Item Selector (Refactored to Grid for better space)
-        selector_group = QGroupBox("إضافة أصناف")
+        # Item Selector (Enhanced Smart Grid)
+        selector_group = QGroupBox("إضافة أصناف ذكية")
         selector_grid = QGridLayout(selector_group)
-        selector_grid.setSpacing(15)
+        selector_grid.setSpacing(25)
 
         self.item_combo = QComboBox()
         self.item_combo.setEditable(True)
+        self.item_combo.setMinimumHeight(50)
         self.item_combo.setPlaceholderText("اختر صنف أو ابحث بالكود...")
         self.load_items()
         self.item_combo.currentIndexChanged.connect(self.handle_item_selection_change)
 
         scan_item_btn = QPushButton()
         scan_item_btn.setIcon(qta.icon("fa5s.qrcode", color="#1a2a6c"))
-        scan_item_btn.setFixedSize(40, 40)
+        scan_item_btn.setFixedSize(50, 50)
         scan_item_btn.setToolTip("مسح QR كود لاختيار صنف")
         scan_item_btn.clicked.connect(self.handle_item_scan)
 
@@ -103,68 +120,90 @@ class StockOperationsView(QWidget):
         self.qty_input = QSpinBox()
         self.qty_input.setMinimum(1)
         self.qty_input.setMaximum(1000000)
-        self.qty_input.setMinimumHeight(35)
-        selector_grid.addWidget(QLabel("الكمية:"), 1, 0)
+        self.qty_input.setMinimumHeight(45)
+        selector_grid.addWidget(QLabel("الكمية المطلوب تحريكها:"), 1, 0)
         selector_grid.addWidget(self.qty_input, 1, 1)
 
         self.price_input = QLineEdit()
         self.price_input.setPlaceholderText("0.00")
-        self.price_input.setMinimumHeight(35)
-        selector_grid.addWidget(QLabel("السعر:"), 1, 2)
+        self.price_input.setMinimumHeight(45)
+        selector_grid.addWidget(QLabel("سعر الوحدة:"), 1, 2)
         selector_grid.addWidget(self.price_input, 1, 3)
 
         if self.op_type == "IN":
             self.batch_input = QLineEdit()
-            self.batch_input.setPlaceholderText("رقم التشغيلة / Batch")
-            self.batch_input.setMinimumHeight(35)
-            selector_grid.addWidget(QLabel("التشغيلة:"), 2, 0)
+            self.batch_input.setPlaceholderText("رقم التشغيلة / Batch Number")
+            self.batch_input.setMinimumHeight(45)
+            selector_grid.addWidget(QLabel("رقم التشغيلة:"), 2, 0)
             selector_grid.addWidget(self.batch_input, 2, 1)
 
             self.prod_date = QDateEdit()
             self.prod_date.setCalendarPopup(True)
             from PySide6.QtCore import QDate
             self.prod_date.setDate(QDate.currentDate())
-            self.prod_date.setMinimumHeight(35)
+            self.prod_date.setMinimumHeight(45)
             selector_grid.addWidget(QLabel("تاريخ الإنتاج:"), 2, 2)
             selector_grid.addWidget(self.prod_date, 2, 3)
 
             self.exp_date = QDateEdit()
             self.exp_date.setCalendarPopup(True)
             self.exp_date.setDate(QDate.currentDate().addYears(1))
-            self.exp_date.setMinimumHeight(35)
+            self.exp_date.setMinimumHeight(45)
             selector_grid.addWidget(QLabel("تاريخ الانتهاء:"), 3, 0)
             selector_grid.addWidget(self.exp_date, 3, 1)
 
-        add_item_btn = QPushButton("إضافة الصنف للقائمة المؤقتة")
+        add_item_btn = QPushButton("إضافة الصنف للقائمة (ذكية)")
         add_item_btn.setObjectName("GoldButton")
-        add_item_btn.setMinimumHeight(40)
+        add_item_btn.setMinimumHeight(55)
+        add_item_btn.setIcon(qta.icon("fa5s.plus-circle", color="black"))
         add_item_btn.clicked.connect(self.add_item_to_list)
         selector_grid.addWidget(add_item_btn, 3, 2, 1, 2)
 
         layout.addWidget(selector_group)
 
+        # Selected Items Table
+        table_group = QGroupBox("الأصناف المضافة للعملية")
+        table_layout = QVBoxLayout(table_group)
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        headers = ["الكود", "الاسم", "الكمية", "السعر"]
+        self.table.setHorizontalHeaderLabels(headers)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setMinimumHeight(300)
+        table_layout.addWidget(self.table)
+
+        clear_btn = QPushButton("مسح القائمة بالكامل")
+        clear_btn.setStyleSheet("color: #e74c3c; border: 1px solid #e74c3c; padding: 5px;")
+        clear_btn.clicked.connect(self.clear_list)
+        table_layout.addWidget(clear_btn, 0, Qt.AlignLeft)
+
+        layout.addWidget(table_group)
+
         # Financials
         fin_group = QGroupBox("الإجماليات والخصومات")
         fin_layout = QFormLayout(fin_group)
+        fin_layout.setSpacing(20)
 
         disc_box = QHBoxLayout()
         self.discount_input = QSpinBox()
         self.discount_input.setSuffix("%")
-        self.discount_input.setMinimumWidth(100)
+        self.discount_input.setMinimumHeight(45)
+        self.discount_input.setMinimumWidth(150)
         self.discount_input.valueChanged.connect(self.update_summary)
         disc_box.addWidget(self.discount_input)
         disc_box.addStretch()
 
-        fin_layout.addRow("نسبة الخصم:", disc_box)
+        fin_layout.addRow("نسبة الخصم التجاري:", disc_box)
 
         self.summary_label = QLabel("المجموع: 0.00 | الخصم: 0.00 | الإجمالي: 0.00")
         self.summary_label.setObjectName("GoldSummaryLabel")
+        self.summary_label.setMinimumHeight(60)
         fin_layout.addRow(self.summary_label)
 
-        # Submit Button (Moved here as requested, after financials)
-        self.submit_btn = QPushButton("إتمام العملية وحفظ PDF")
+        # Submit Button
+        self.submit_btn = QPushButton("إتمام العملية وتوليد المستندات (PDF)")
         self.submit_btn.setObjectName("PrimaryButton")
-        self.submit_btn.setFixedHeight(50)
+        self.submit_btn.setFixedHeight(65)
         from utils.auth import AuthManager
         if not AuthManager.has_permission(self.op_type.lower(), 'submit'):
             self.submit_btn.setEnabled(False)
@@ -175,13 +214,8 @@ class StockOperationsView(QWidget):
 
         layout.addWidget(fin_group)
 
-        # Selected Items Table
-        self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        headers = ["الكود", "الاسم", "الكمية", "السعر"]
-        self.table.setHorizontalHeaderLabels(headers)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        layout.addWidget(self.table)
+        scroll.setWidget(container)
+        main_layout.addWidget(scroll)
 
     def setup_history_tab(self):
         layout = QVBoxLayout(self.history_tab)
@@ -242,10 +276,14 @@ class StockOperationsView(QWidget):
 
     def update_summary(self):
         subtotal = sum(item['quantity'] * item.get('price', 0) for item in self.items_to_move)
+        total_qty = sum(item['quantity'] for item in self.items_to_move)
         discount_pct = self.discount_input.value()
         discount_amt = (subtotal * discount_pct) / 100
         final = subtotal - discount_amt
-        self.summary_label.setText(f"المجموع: {subtotal:,.2f} | الخصم: {discount_amt:,.2f} | الإجمالي: {final:,.2f}")
+        self.summary_label.setText(
+            f"إجمالي عدد الأصناف: {len(self.items_to_move)} | إجمالي الكميات: {total_qty}\n"
+            f"المجموع: {subtotal:,.2f} | الخصم: {discount_amt:,.2f} | الإجمالي النهائي: {final:,.2f}"
+        )
 
     def handle_item_selection_change(self):
         item_data = self.item_combo.currentData()
@@ -281,6 +319,12 @@ class StockOperationsView(QWidget):
         for i in items:
             self.item_combo.addItem(f"{i['code']} - {i['name']} (المخزون: {i['current_stock']})", i)
 
+    def clear_list(self):
+        if self.items_to_move:
+            self.table.setRowCount(0)
+            self.items_to_move = []
+            self.update_summary()
+
     def add_item_to_list(self):
         item_data = self.item_combo.currentData()
         if not item_data:
@@ -288,13 +332,6 @@ class StockOperationsView(QWidget):
             return
         qty = self.qty_input.value()
         if qty <= 0: return
-
-        if self.op_type == "OUT":
-            current_item = Item().get_by_id(item_data['id'])
-            if qty > current_item['current_stock']:
-                QMessageBox.warning(self, "تنبيه المخزون",
-                                  f"الكمية المطلوبة ({qty}) أكبر من المخزون المتاح ({current_item['current_stock']})")
-                return
 
         try:
             price_text = self.price_input.text()
@@ -306,30 +343,57 @@ class StockOperationsView(QWidget):
             QMessageBox.warning(self, "خطأ", "السعر يجب أن يكون رقماً")
             return
 
-        row = self.table.rowCount()
-        self.table.insertRow(row)
-        self.table.setItem(row, 0, QTableWidgetItem(str(item_data['code'])))
-        self.table.setItem(row, 1, QTableWidgetItem(str(item_data['name'])))
-        self.table.setItem(row, 2, QTableWidgetItem(str(qty)))
-        self.table.setItem(row, 3, QTableWidgetItem(str(price)))
+        # Smart Duplicate Check
+        existing_idx = -1
+        for idx, item in enumerate(self.items_to_move):
+            if item['item_id'] == item_data['id']:
+                existing_idx = idx
+                break
 
-        item_entry = {
-            "item_id": item_data['id'],
-            "item_name": item_data['name'],
-            "item_code": item_data['code'],
-            "quantity": qty,
-            "price": price,
-            "unit": item_data.get('unit', '')
-        }
+        if existing_idx != -1:
+            new_qty = self.items_to_move[existing_idx]['quantity'] + qty
+        else:
+            new_qty = qty
 
-        if self.op_type == "IN":
-            item_entry["batch_info"] = {
-                "batch_number": self.batch_input.text() or "DEFAULT",
-                "production_date": self.prod_date.date().toString("yyyy-MM-dd"),
-                "expiry_date": self.exp_date.date().toString("yyyy-MM-dd")
+        if self.op_type == "OUT":
+            current_item = Item().get_by_id(item_data['id'])
+            if new_qty > current_item['current_stock']:
+                QMessageBox.warning(self, "تنبيه المخزون",
+                                  f"الكمية الكلية المطلوبة ({new_qty}) أكبر من المخزون المتاح ({current_item['current_stock']})")
+                return
+
+        if existing_idx != -1:
+            self.items_to_move[existing_idx]['quantity'] = new_qty
+            self.items_to_move[existing_idx]['price'] = price
+            # Update Table Row
+            self.table.setItem(existing_idx, 2, QTableWidgetItem(str(new_qty)))
+            self.table.setItem(existing_idx, 3, QTableWidgetItem(str(price)))
+        else:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            self.table.setItem(row, 0, QTableWidgetItem(str(item_data['code'])))
+            self.table.setItem(row, 1, QTableWidgetItem(str(item_data['name'])))
+            self.table.setItem(row, 2, QTableWidgetItem(str(qty)))
+            self.table.setItem(row, 3, QTableWidgetItem(str(price)))
+
+            item_entry = {
+                "item_id": item_data['id'],
+                "item_name": item_data['name'],
+                "item_code": item_data['code'],
+                "quantity": qty,
+                "price": price,
+                "unit": item_data.get('unit', '')
             }
 
-        self.items_to_move.append(item_entry)
+            if self.op_type == "IN":
+                item_entry["batch_info"] = {
+                    "batch_number": self.batch_input.text() or "DEFAULT",
+                    "production_date": self.prod_date.date().toString("yyyy-MM-dd"),
+                    "expiry_date": self.exp_date.date().toString("yyyy-MM-dd")
+                }
+
+            self.items_to_move.append(item_entry)
+
         self.update_summary()
 
     def handle_submit(self):
